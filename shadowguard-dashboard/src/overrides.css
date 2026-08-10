@@ -1,0 +1,2 @@
+/* Status text contains a space, so React emits separate `in` and `progress` classes. */
+.badge.in { background: #523d16; color: #ffd987; }
