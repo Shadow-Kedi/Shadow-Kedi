@@ -1,4 +1,0 @@
-{"timestamp":"2026-08-10T02:15:00Z","kind":"browser","user":"usr_anon_17","device":"dev_anon_04","domain":"chatgpt.com","duration_seconds":300}
-{"timestamp":"2026-08-10T02:17:00Z","kind":"browser","user":"usr_anon_17","device":"dev_anon_04","domain":"dropbox.com","duration_seconds":120}
-{"timestamp":"2026-08-10T02:20:00Z","kind":"upload","user":"usr_anon_17","device":"dev_anon_04","domain":"dropbox.com","bytes_transferred":524288000}
-{"timestamp":"2026-08-10T02:20:01Z","kind":"dlp","user":"usr_anon_17","device":"dev_anon_04","classification":"highly_confidential","detectors":["ssn","aws_key"],"match_count":3}
