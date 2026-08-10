@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: shadowguard
+      POSTGRES_USER: shadowguard
+      POSTGRES_PASSWORD: shadowguard_dev_only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shadowguard -d shadowguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes: [postgres_data:/var/lib/postgresql/data]
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://shadowguard:shadowguard_dev_only@postgres:5432/shadowguard
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  worker:
+    build: .
+    command: celery -A app.tasks.celery_app worker --loglevel=INFO
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://shadowguard:shadowguard_dev_only@postgres:5432/shadowguard
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  simulator:
+    image: python:3.12-alpine
+    profiles: ["simulator"]
+    working_dir: /workspace
+    volumes: [".:/workspace:ro"]
+    environment:
+      API_URL: http://api:8000
+      INGEST_API_KEY: ${INGEST_API_KEY}
+      TENANT_ID: demo-acme
+    command: ["python", "scripts/replay_events.py", "fixtures/canonical_events.jsonl"]
+    depends_on: [api]
+
+  frontend:
+    image: nginx:1.27-alpine
+    profiles: ["frontend"]
+    volumes: ["./frontend:/usr/share/nginx/html:ro"]
+    ports: ["8080:80"]
+    depends_on: [api]
+
+volumes:
+  postgres_data:

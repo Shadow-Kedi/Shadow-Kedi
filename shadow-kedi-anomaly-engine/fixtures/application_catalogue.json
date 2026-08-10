@@ -1,0 +1,12 @@
+[
+  {"name":"ChatGPT","domain":"chatgpt.com","category":"ai","approval_state":"conditional","risk_weight":10},
+  {"name":"Claude","domain":"claude.ai","category":"ai","approval_state":"conditional","risk_weight":10},
+  {"name":"Gemini","domain":"gemini.google.com","category":"ai","approval_state":"conditional","risk_weight":10},
+  {"name":"Dropbox","domain":"dropbox.com","category":"cloud_storage","approval_state":"unapproved","risk_weight":25},
+  {"name":"Google Drive","domain":"drive.google.com","category":"cloud_storage","approval_state":"approved","risk_weight":5},
+  {"name":"Microsoft 365","domain":"office.com","category":"collaboration","approval_state":"approved","risk_weight":2},
+  {"name":"Slack","domain":"slack.com","category":"collaboration","approval_state":"approved","risk_weight":5},
+  {"name":"Notion","domain":"notion.so","category":"collaboration","approval_state":"conditional","risk_weight":8},
+  {"name":"Perplexity","domain":"perplexity.ai","category":"ai","approval_state":"unapproved","risk_weight":15},
+  {"name":"WeTransfer","domain":"wetransfer.com","category":"cloud_storage","approval_state":"unapproved","risk_weight":25}
+]
