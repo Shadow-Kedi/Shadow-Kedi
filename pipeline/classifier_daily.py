@@ -39,7 +39,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
 from sklearn.tree import DecisionTreeClassifier
 
-from pipeline.risk_engine import load_casb_lookup, load_cert_timestamps
+from pipeline.timestamp_lookup import load_casb_lookup, load_cert_timestamps
 
 HEURISTIC_EVENT_AUC = 0.6159   # anomaly_detector.py, real scale
 CLASSIFIER_EVENT_AUC = 0.5298  # classifier.py (random_forest), real scale -- this variant's real comparison point
