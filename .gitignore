@@ -216,6 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+<<<<<<< HEAD
 
 # ============================================================
 # Shadow Kedi project-specific
@@ -237,3 +238,12 @@ data/models/
 !data/synthetic/.gitkeep
 !data/processed/.gitkeep
 !data/models/.gitkeep
+=======
+# CERT r4.2 insider-threat data — licensed, cannot be redistributed (see license.txt)
+data/raw/cert/
+data/synthetic/cert_events.json
+data/processed/normalized_cert_events.json
+
+# NSL-KDD (no longer used, but leaving the guard in case it comes back)
+data/raw/nslkdd/
+>>>>>>> c8457c2 (chore: update gitignore and requirements)
