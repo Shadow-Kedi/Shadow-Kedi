@@ -1,0 +1,243 @@
+/* effects.css — motion layer on top of styles.css: custom cursor, hover
+   transitions, the critical-alert pulse, and the page fade-in.
+   Loaded after styles.css/overrides.css so it only adds transition/animation
+   properties, never overrides color or layout. */
+
+/* ---------- Custom cursor ---------- */
+/* Only on devices with a precise pointer; touch devices keep their native cursor. */
+@media (hover: hover) and (pointer: fine) {
+  body.cursor-fx { cursor: none; }
+
+  .cursor-dot,
+  .cursor-ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 999;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+  }
+
+  .cursor-dot {
+    width: 6px;
+    height: 6px;
+    background: #70e1bf;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+  }
+
+  .cursor-ring {
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(112, 225, 191, 0.55);
+    background: rgba(112, 225, 191, 0.06);
+    transition: width 0.18s ease, height 0.18s ease, border-color 0.18s ease,
+      background-color 0.18s ease, opacity 0.15s ease;
+  }
+
+  .cursor-ring.is-interactive {
+    width: 48px;
+    height: 48px;
+    border-color: #70e1bf;
+    background: rgba(112, 225, 191, 0.12);
+  }
+
+  .cursor-ring.is-down {
+    width: 24px;
+    height: 24px;
+  }
+
+  .cursor-dot.is-hidden,
+  .cursor-ring.is-hidden {
+    opacity: 0;
+  }
+}
+
+/* ---------- Hover transitions: rows, buttons, nav ---------- */
+.row,
+.approw {
+  transition: background-color 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+.row:hover {
+  transform: translateX(2px);
+}
+.approw:hover {
+  background: #13233a;
+}
+
+nav button {
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.12s ease;
+  position: relative;
+}
+nav button:hover {
+  transform: translateX(2px);
+}
+nav button.active::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 2px;
+  background: #70e1bf;
+}
+
+button,
+.link,
+.back,
+.badge {
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.12s ease,
+    box-shadow 0.18s ease, opacity 0.18s ease;
+}
+.primary:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(112, 225, 191, 0.25);
+}
+.primary:not(:disabled):active {
+  transform: translateY(0);
+}
+.link:hover,
+.back:hover {
+  transform: translateX(2px);
+}
+.pagination button:not(:disabled):hover {
+  color: #d5fff0;
+}
+
+.metric,
+.panel {
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+.metric:hover {
+  border-color: #3a5170;
+  transform: translateY(-2px);
+}
+
+/* ---------- Critical alert pulse ---------- */
+@keyframes pulseCritical {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 57, 224, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(239, 57, 224, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 57, 224, 0);
+  }
+}
+.pulse-critical {
+  animation: pulseCritical 1.8s ease-out infinite;
+}
+.dot.critical.pulse-critical,
+.point.critical.pulse-critical {
+  animation: pulseCritical 1.6s ease-out infinite;
+}
+.badge.critical.pulse-critical {
+  animation: pulseCritical 1.8s ease-out infinite;
+}
+
+/* ---------- Heartbeat indicator: the signature element ---------- */
+.heartbeat {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.heartbeat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  transition: background-color 0.4s ease;
+}
+.heartbeat-dot.unknown {
+  background: var(--heartbeat-down);
+  opacity: 0.6;
+}
+.heartbeat-dot.healthy-idle {
+  background: var(--accent-teal-dim);
+}
+.heartbeat-dot.live {
+  background: var(--accent-teal);
+  animation: heartbeatPulse 1.1s ease-out;
+}
+.heartbeat-dot.down {
+  background: var(--heartbeat-down);
+}
+.heartbeat-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #9db0c5;
+  letter-spacing: 0.02em;
+}
+@keyframes heartbeatPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(112, 225, 191, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(112, 225, 191, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(112, 225, 191, 0);
+  }
+}
+
+/* ---------- Score readouts: count-up + flash-on-change ---------- */
+.score-value {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+.score-flash {
+  animation: scoreFlash 0.7s ease;
+  border-radius: 4px;
+}
+@keyframes scoreFlash {
+  0% {
+    background: rgba(112, 225, 191, 0.35);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+/* ---------- Page fade-in ---------- */
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-fade-in {
+  animation: pageFadeIn 0.4s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-dot,
+  .cursor-ring {
+    display: none;
+  }
+  .row,
+  .approw,
+  nav button,
+  button,
+  .link,
+  .back,
+  .badge,
+  .metric,
+  .panel {
+    transition: none;
+  }
+  .pulse-critical,
+  .page-fade-in,
+  .heartbeat-dot.live,
+  .score-flash {
+    animation: none;
+  }
+}

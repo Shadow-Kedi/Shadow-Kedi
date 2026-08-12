@@ -1,0 +1,50 @@
+/* tokens.css — the design system for the visual pass: severity palette
+   (the accent system), the sans/mono type split, and the three-state
+   heartbeat colors. Single source of truth; styles.css/overrides.css/
+   effects.css/charts.tsx all read from these custom properties rather than
+   redeclaring hex values, so there's exactly one place to change a color. */
+
+:root {
+  /* Severity palette -- IS the accent system for this product. Each has a
+     "mark" (dots, chart fills, pulse rings -- meant to stand alone as a
+     filled shape) and a badge bg/fg pair (dark tinted background + light
+     tinted text, for the pill labels). low/medium/high unchanged from the
+     original palette; critical is new -- see main.tsx design-pass notes for
+     why it's magenta rather than a deeper red. */
+  --sev-low-mark: #347eaf;
+  --sev-low-badge-bg: #143653;
+  --sev-low-badge-fg: #83d0ff;
+
+  --sev-medium-mark: #e6a23c;
+  --sev-medium-badge-bg: #523d16;
+  --sev-medium-badge-fg: #ffd987;
+
+  --sev-high-mark: #e56b55;
+  --sev-high-badge-bg: #4e2730;
+  --sev-high-badge-fg: #ffb6a9;
+
+  --sev-critical-mark: #ef39e0;
+  --sev-critical-badge-bg: #4a1052;
+  --sev-critical-badge-fg: #ffb8f5;
+
+  /* Teal: NOT a severity color. Reserved specifically for the heartbeat
+     indicator and interactive chrome (buttons, links, focus rings, nav-active
+     mark) -- a real, narrow job rather than a diffuse "brand accent". */
+  --accent-teal: #70e1bf;
+  --accent-teal-dim: #3a6f60; /* healthy-idle heartbeat: steady, not attention-grabbing */
+  --heartbeat-down: #5b6472; /* down state: dim gray, deliberately colorless */
+
+  /* Demo-data hazard stripe: NOT a severity color, NOT the teal accent --
+     the construction/non-prod-banner convention (dark + amber diagonal
+     stripe) exists specifically so "this is not real data" reads as a
+     distinct category of signal from both "system chrome" and "alert
+     severity", and can never be mistaken for a medium-severity amber tint
+     because it's a pattern, not a flat fill. */
+  --demo-stripe: #e6a23c;
+
+  /* Type: sans for headers/prose/nav/chrome, mono for anything an analyst
+     would scan as data -- scores, IDs, timestamps, rule names, tiers. */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  --font-size-mono-min: 12px; /* mono data never drops below this, any viewport */
+}

@@ -1,0 +1,57 @@
+/* Status text contains a space, so React emits separate `in` and `progress` classes. */
+.badge.in { background: #523d16; color: #ffd987; }
+
+/* Chart.js panels (src/charts.tsx) */
+.chart-wrap { width: 100%; }
+.chart-wrap canvas { width: 100% !important; height: 100% !important; }
+.chart-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+.chart-grid .panel { margin-bottom: 0; }
+.chart-panel h3 { margin: 0 0 10px; font-size: 13px; color: #9db0c5; text-transform: uppercase; letter-spacing: .07em; }
+
+/* Donut single-category state: a labeled ring instead of a bare 100%-one-slice circle */
+.donut-wrap { position: relative; }
+.donut-center-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; pointer-events: none; }
+.donut-center-label b { font-size: 20px; color: #e7edf5; }
+.donut-center-label span { font-size: 12px; color: #9db0c5; text-transform: capitalize; }
+
+/* MITRE ATT&CK technique tag on alert detail */
+.mitre-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; margin-left: 8px; border-radius: 999px; background: #1a304a; color: #bde2f8; font-size: 12px; font-weight: 700; text-decoration: none; border: 1px solid #2c4463; }
+.mitre-tag:hover { background: #20395a; }
+.mitre-tag small { color: #8fa6bd; font-weight: 500; }
+
+/* "Same user" related alerts panel */
+.related-panel .row { grid-template-columns: 1fr 100px 55px 18px; }
+.related-empty { color: #9db0c5; font-size: 13px; padding: 8px 2px; }
+
+/* Friendlier inline message for a transient "open user profile" failure —
+   calmer than .error since api.user() has already retried once by the time
+   this shows, and a real retry button is one click away. */
+.profile-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 15px; border-radius: 7px; margin-bottom: 18px; background: #142941; color: #bde2f8; }
+.profile-error button { flex: 0 0 auto; color: #8bdcc3; background: transparent; border: 1px solid #2c4463; border-radius: 6px; padding: 6px 12px; }
+.profile-error button:hover:not(:disabled) { background: #1a304a; }
+.profile-error button:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Leaderboard reuses .row/.header, but its last column holds a number
+   (alert count) rather than the chevron icon Alerts/Overview use that 18px
+   slot for -- too narrow for the word "Alerts", which was overflowing its
+   cell, and "Max score" was wrapping to two lines at 55px. Widened; no
+   chevron column needed since Leaderboard's rows don't render one. */
+.leaderboard-row { grid-template-columns: 1fr 100px 80px 60px; }
+
+/* Trends & Policy feed */
+.triggers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.trigger-card { margin-bottom: 0; }
+.trigger-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.trigger-head h2 { margin: 0; }
+.trigger-count { color: #9db0c5; font-size: 12px; }
+.trigger-breakdown { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 16px; }
+.trigger-action { border-top: 1px solid #26364a; padding-top: 14px; }
+.trigger-action b { display: block; margin: 2px 0 6px; font-size: 15px; }
+.trigger-action p { margin: 0; color: #c3d0df; font-size: 13px; }
+
+@media (max-width: 780px) {
+  .chart-grid { grid-template-columns: 1fr; }
+  .related-panel .row { grid-template-columns: 1fr 75px 38px 12px; }
+  .leaderboard-row { grid-template-columns: 1fr 75px 55px 40px; }
+  .triggers { grid-template-columns: 1fr; }
+}
