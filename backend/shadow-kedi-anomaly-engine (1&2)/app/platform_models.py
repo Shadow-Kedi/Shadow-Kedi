@@ -2,7 +2,13 @@ from datetime import datetime
 from typing import Any, Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-EventKind = Literal["network_access", "installed_application", "file_upload", "dlp_outcome"]
+# file_integrity added 2026-08-12: FIM/syscheck "Integrity checksum changed"
+# alerts were being bucketed into file_upload, which is supposed to mean
+# actual data movement (it feeds Volume Anomaly downstream -- see
+# event_adapter.py). A system binary checksum change is not data leaving the
+# device; conflating the two made file_upload's count meaningless and could
+# have fed false volume-anomaly signal.
+EventKind = Literal["network_access", "installed_application", "file_upload", "dlp_outcome", "file_integrity"]
 SENSITIVE_KEYS = {"content", "clipboard", "password", "secret", "token", "authorization", "cookie", "raw_url", "query", "file_contents"}
 
 

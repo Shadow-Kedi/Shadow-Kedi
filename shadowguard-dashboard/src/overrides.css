@@ -31,6 +31,11 @@
 .profile-error button:hover:not(:disabled) { background: #1a304a; }
 .profile-error button:disabled { opacity: .6; cursor: not-allowed; }
 
+/* FIM-noise annotation under Overview's severity cards -- a footnote, not a
+   headline, so it sits close to the cards it's explaining rather than
+   reading as its own section. */
+.fim-note { margin: -14px 0 20px; font-size: 12px; cursor: help; border-bottom: 1px dotted #42566e; width: max-content; }
+
 /* Leaderboard reuses .row/.header, but its last column holds a number
    (alert count) rather than the chevron icon Alerts/Overview use that 18px
    slot for -- too narrow for the word "Alerts", which was overflowing its

@@ -14,10 +14,27 @@ export const alerts: Alert[] = [
  { id:'AL-1029', userId:'u-6', userName:'Dana Kim', department:'Product', severity:'low', score:21, app:'Notion AI', category:'Shadow AI', status:'resolved', createdAt:'2026-08-09T09:12:00Z', tier:'R2', recommendation:'Notify employee and confirm whether a sanctioned research tool meets the team’s need.', evidence:[{label:'New application observed',detail:'Notion AI is not in the approved application inventory.',observedAt:'09:12',strength:'observed'}] },
  { id:'AL-1028', userId:'u-7', userName:'Leo Fischer', department:'Product', severity:'medium', score:57, app:'Perplexity AI', category:'Shadow AI', status:'under_review', createdAt:'2026-08-07T21:30:00Z', tier:'R3', recommendation:'Recommend sanctioned-alternative evaluation because use is widespread in this peer group.', evidence:[{label:'Peer prevalence',detail:'31% of Product has active use of this application.',observedAt:'21:30',strength:'observed'},{label:'Unapproved app',detail:'Perplexity AI is not yet approved for this tenant.',observedAt:'21:30',strength:'observed'}] }
 ];
+// Sorted most-recent-first immediately after declaration (in place, so every
+// downstream export below inherits it -- filters/slices preserve order) --
+// matches GET /alerts's real `.desc()` behavior. Was previously just
+// authoring order, which wasn't chronological at all (AL-1031, the actual
+// newest alert, was 5th in the array) -- silently wrong for both the main
+// Alerts page and, via `profiles` below, the Detail page's "Other alerts for
+// this user" list. Same bug independently found and fixed server-side in
+// GET /users/{id} (see app/api.py) -- the real endpoint was sorting oldest-
+// first; this is the equivalent fix for mock mode, not a hand-copy of it.
+alerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 export const applications: AppInventory[] = [
  {id:'a1',name:'Perplexity AI',category:'Shadow AI',approval:'unapproved',activeUsers:7,review:'needed'}, {id:'a2',name:'Notion AI',category:'Shadow AI',approval:'review',activeUsers:18,review:'in progress'}, {id:'a3',name:'Google Workspace',category:'Collaboration',approval:'sanctioned',activeUsers:148,review:'complete'}, {id:'a4',name:'Personal Google Drive',category:'Personal cloud',approval:'unapproved',activeUsers:3,review:'needed'}
 ];
-export const overview: Overview = { severityCounts:{low:6,medium:9,high:4,critical:1}, newApps:3, reviewedThisWeek:14, topRisk:alerts.slice(0,3), weeklyTrend:[7,9,12,10,13,14] };
+// topRisk was `alerts.slice(0,3)` -- the first 3 array elements, not actually
+// sorted by score despite the label. Happened to line up with the 3 highest
+// scores by coincidence of authoring order; broke that coincidence the
+// moment `alerts` above got sorted by date instead. Real backend sorts by
+// score explicitly (see GET /overview: `sorted(alert_dicts, key=...score,
+// reverse=True)[:3]`) -- mirrored here rather than assumed to still work.
+const topRisk = [...alerts].sort((a, b) => b.score - a.score).slice(0, 3);
+export const overview: Overview = { severityCounts:{low:6,medium:9,high:4,critical:1}, newApps:3, reviewedThisWeek:14, topRisk, weeklyTrend:[7,9,12,10,13,14] };
 export const profiles: Record<string, UserProfile> = {
  'u-1': {id:'u-1',name:'Maya Chen',department:'Marketing',baseline:'established',trend:[32,38,41,55,61,78],inventory:['Canva','Perplexity AI','Google Workspace'],alerts:alerts.filter(a=>a.userId==='u-1')},
  'u-2':{id:'u-2',name:'Jordan Rivers',department:'Sales',baseline:'established',trend:[25,22,28,31,64,93],inventory:['Google Workspace','Personal Google Drive'],alerts:alerts.filter(a=>a.userId==='u-2')},

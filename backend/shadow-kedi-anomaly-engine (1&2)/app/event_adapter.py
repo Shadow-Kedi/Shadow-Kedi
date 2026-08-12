@@ -41,8 +41,8 @@ TENANT_DEFAULT_DEPARTMENT = "tenant-default"
 # --- event_type ----------------------------------------------------------
 # SecurityEvent.EventType is {login, activity, transfer}. CanonicalEvent's
 # event_type is collector-shaped: {network_access, installed_application,
-# file_upload, dlp_outcome}. There's no clean 1:1 mapping. Decisions, in order
-# of how much they matter against real data:
+# file_upload, dlp_outcome, file_integrity}. There's no clean 1:1 mapping.
+# Decisions, in order of how much they matter against real data:
 #
 #  - installed_application -> ACTIVITY. An app being installed isn't a session
 #    boundary or a data movement; "activity" is the closest of the three.
@@ -52,6 +52,13 @@ TENANT_DEFAULT_DEPARTMENT = "tenant-default"
 #  - dlp_outcome            -> TRANSFER. A DLP outcome is fundamentally about
 #    data handling/movement; grouping it with file_upload keeps the mapping
 #    forward-compatible with the day DLP tooling starts reporting sizes.
+#  - file_integrity         -> ACTIVITY, deliberately NOT TRANSFER. Added
+#    2026-08-12 when FIM/syscheck "Integrity checksum changed" alerts turned
+#    out to be miscategorized as file_upload, which was silently feeding
+#    Volume Anomaly detection with checksum-observation noise that was never
+#    real data movement. This is exactly why it's a separate entry rather
+#    than left to the dict's own default fallback (activity) below --
+#    correct by construction, not by accident of an unrelated default.
 #  - network_access         -> see _classify_network_access() below. This is
 #    the ONLY event_type actually flowing through the live macOS fleet today
 #    (confirmed against the live DB while building this adapter: 25/25 rows),
@@ -68,6 +75,7 @@ _STATIC_EVENT_TYPE_MAP: dict[str, EventType] = {
     "installed_application": EventType.ACTIVITY,
     "file_upload": EventType.TRANSFER,
     "dlp_outcome": EventType.TRANSFER,
+    "file_integrity": EventType.ACTIVITY,
 }
 
 

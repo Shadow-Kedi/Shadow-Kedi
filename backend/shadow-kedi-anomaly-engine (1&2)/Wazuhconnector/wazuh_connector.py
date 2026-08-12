@@ -84,17 +84,25 @@ def save_watermark(ts: str) -> None:
 # gets lost while you're still building out the rule mapping.
 # --------------------------------------------------------------------------
 
-# The ingest API only accepts these four event_type values (confirmed
-# against a live 422 response from the real backend on 2026-08-11).
-# Everything from Wazuh has to be bucketed into one of these four —
-# there is no "unclassified" fallback accepted by the schema, so
-# anything that doesn't clearly match a category defaults to the
+# The ingest API accepts five event_type values as of 2026-08-12 (originally
+# four, confirmed against a live 422 response from the real backend on
+# 2026-08-11; file_integrity added when FIM/syscheck alerts turned out to be
+# silently inflating file_upload's count with non-data-movement noise — see
+# app/platform_models.py). Everything from Wazuh has to be bucketed into one
+# of these five — there is no "unclassified" fallback accepted by the
+# schema, so anything that doesn't clearly match a category defaults to the
 # closest available bucket (network_access) rather than being dropped.
 def classify_event_type(source: dict) -> str:
     rule_groups = source.get("rule", {}).get("groups", []) or []
     full_log = (source.get("full_log") or "").lower()
 
-    if "syscheck" in rule_groups or "file" in rule_groups or "usb" in rule_groups:
+    # FIM/syscheck ("Integrity checksum changed" etc.) is a checksum/config
+    # observation, not data leaving the device -- kept separate from "file"/
+    # "usb", which genuinely are file-movement-shaped groups and still belong
+    # in file_upload.
+    if "syscheck" in rule_groups:
+        return "file_integrity"
+    if "file" in rule_groups or "usb" in rule_groups:
         return "file_upload"
     if "software" in rule_groups or "installed" in full_log or "package" in full_log:
         return "installed_application"

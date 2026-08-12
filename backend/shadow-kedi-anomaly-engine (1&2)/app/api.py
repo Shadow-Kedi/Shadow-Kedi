@@ -301,11 +301,20 @@ def get_overview():
 
     top_risk = sorted(alert_dicts, key=lambda a: a["score"], reverse=True)[:3]
 
+    # file_integrity (FIM/syscheck "Integrity checksum changed" etc.) is
+    # routine system noise, not Shadow IT signal -- it's still counted in
+    # severityCounts above (almost always "low"), so a raw total can look
+    # alarmingly large without context. Broken out separately here so the
+    # dashboard can show "N are routine file-integrity checks" rather than
+    # one undifferentiated number with no way to explain it live.
+    file_integrity_count = sum(1 for a in alert_dicts if a["category"] == "file_integrity")
+
     return {
         "severityCounts": counts,
         "newApps": 0,
         "reviewedThisWeek": sum(1 for a in alert_dicts if a["status"] == "resolved"),
         "topRisk": top_risk,
+        "fileIntegrityCount": file_integrity_count,
     }
 
 
@@ -375,9 +384,17 @@ def get_user(user_id: str):
         "name": user_id,
         "department": "Unclassified",
         "baseline": "learning",
+        # trend needs the last 6 in chronological (oldest-first) order for the
+        # line chart to read left-to-right as time -- computed from alert_dicts
+        # BEFORE reversing it below, not after.
         "trend": [a["score"] for a in alert_dicts[-6:]],
         "inventory": sorted({a["app"] for a in alert_dicts}),
-        "alerts": alert_dicts,
+        # Query above is oldest-first (required for the trend slice above);
+        # the alerts list itself should read most-recent-first for an analyst
+        # scanning "what's happened with this user recently" -- same
+        # convention GET /alerts already uses (.desc()). Reversed here rather
+        # than querying twice.
+        "alerts": list(reversed(alert_dicts)),
     }
 
 
