@@ -247,3 +247,14 @@ data/models/
 !data/synthetic/.gitkeep
 !data/processed/.gitkeep
 !data/models/.gitkeep
+
+# From teammate's remote (it had its own pre-existing unresolved conflict
+# here, from her commit c8457c2 -- cleaned up as part of this merge, not
+# picking a side). data/raw/cert/ above already covers her CERT line
+# verbatim, skipped as a pure duplicate. Her cert_events/normalized_cert_events
+# lines use a .json extension where the block above uses .jsonl -- kept both
+# rather than guessing which is authoritative. Her NSL-KDD line is technically
+# already covered by data/raw/ above, kept anyway since it documents intent.
+data/synthetic/cert_events.json
+data/processed/normalized_cert_events.json
+data/raw/nslkdd/  # NSL-KDD, no longer used -- guard kept in case it comes back
