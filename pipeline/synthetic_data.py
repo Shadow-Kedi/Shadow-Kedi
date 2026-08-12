@@ -105,7 +105,17 @@ def _build_risk_reasons(row) -> list[str]:
         reasons.append(f"shadow_it:{shadow_cat}")
     if _safe(row.get("sanction_status")) == "Unsanctioned":
         reasons.append("unsanctioned_application")
-    if _safe(row.get("auth_method")) in ("personal_email_signup", "shared_credential", "none"):
+    # NOTE: compares the RAW value here, not _safe(row.get(...)) --
+    # "none" is a real, meaningful auth_method value in the CASB
+    # generator's own AUTH_METHODS list (meaning "no authentication used
+    # at all," the single most dangerous entry in that field), not a
+    # missing/null marker. Running it through _safe() first would
+    # convert the string "none" into Python None (since _safe() treats
+    # "none" as a null-representation), silently preventing the WORST
+    # auth_method case from ever triggering this reason. Confirmed via
+    # direct testing -- this was a real bug, not a hypothetical one.
+    raw_auth_method = row.get("auth_method")
+    if raw_auth_method in ("personal_email_signup", "shared_credential", "none"):
         reasons.append("weak_auth_method")
     data_class = _safe(row.get("data_classification"))
     if data_class in ("Restricted-PII", "Restricted-Financial"):
