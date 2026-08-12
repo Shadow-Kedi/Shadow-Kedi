@@ -1,0 +1,570 @@
+{
+  "schema_version": "1.0",
+  "description": "Structured claim-level evidence table for the Shadow IT Counter-Research document (sections 9.1-9.9). Each entry represents one discrete factual or practice claim, tagged with an evidence tier so downstream systems can weight claims appropriately rather than treating all recommendations as equally certain.",
+  "tier_definitions": {
+    "verified": "Named, published standard; documented multi-outlet-corroborated incident/event; primary-source vendor documentation; or court record. Independently checkable.",
+    "practice_not_proof": "Real, named mechanism or product, consistently described across multiple independent sources, but with no independent controlled study behind the effectiveness claim.",
+    "flagged_unverifiable": "A specific number or claim that could not be traced past a single unsourced or thinly-sourced vendor blog. Should NOT be used as load-bearing justification for a recommendation.",
+    "removed": "A claim that appeared in an earlier draft and was explicitly retracted after verification failed. Included here only so downstream systems know not to reintroduce it."
+  },
+  "claims": [
+    {
+      "id": "9.1-1-standard",
+      "section": "9.1",
+      "item": "Company-managed encrypted USB drives + block unrecognized devices",
+      "claim": "NIST SP 800-53 Rev. 5 control MP-7 (Media Use) requires restricting/prohibiting defined media types and prohibits portable storage devices with no identifiable owner. MP-7 applies at the Low, Moderate, and High baselines (not Moderate/High only); the ownerless-device clause was folded into base MP-7 in Rev. 5.",
+      "tier": "verified",
+      "sources": [
+        "https://nist-sp-800-53-r5.bsafes.com/docs/3-10-media-protection/mp-7-media-use/",
+        "https://www.upguard.com/compliance/nist-sp-800-53/mp/mp-7"
+      ]
+    },
+    {
+      "id": "9.1-1-risk",
+      "section": "9.1",
+      "item": "Company-managed encrypted USB drives + block unrecognized devices",
+      "claim": "Hard-blocking USB without a fast alternative may push employees to unmonitored channels (personal cloud, email, AirDrop, photographing screens).",
+      "tier": "practice_not_proof",
+      "note": "Plausible, vendor-repeated pattern; no controlled before/after study establishing substitution rate.",
+      "sources": [
+        "Cyberhaven",
+        "Strac",
+        "Vectra"
+      ]
+    },
+    {
+      "id": "9.1-1-fix1",
+      "section": "9.1",
+      "item": "Fix: Content-aware, cross-channel DLP/DDR instead of device-only block",
+      "claim": "Trace data across USB, cloud sync, email, and web/AI destinations with one policy engine; intervene only when sensitive data is at risk; redirect to approved workflow rather than hard block.",
+      "tier": "practice_not_proof",
+      "sources": [
+        "Cyberhaven",
+        "Strac",
+        "Netskope CASB"
+      ]
+    },
+    {
+      "id": "9.1-1-fix2",
+      "section": "9.1",
+      "item": "Fix: Audit-first staged rollout before enforcement",
+      "claim": "Run device control in audit/log-only mode for 1-2 weeks before enforced blocking, to baseline actual usage.",
+      "tier": "practice_not_proof",
+      "sources": [
+        "device-control and endpoint-security vendor pattern, unnamed specific study"
+      ]
+    },
+    {
+      "id": "9.1-2-standard",
+      "section": "9.1",
+      "item": "Centrally registered, approved-device list tied to asset management",
+      "claim": "CIS Controls v8.1, Control 1 requires an up-to-date inventory of every device with owner/approval status. Cadences differ by safeguard: full inventory bi-annual+, unauthorized-asset remediation weekly, active discovery daily+, passive discovery weekly+.",
+      "tier": "verified",
+      "sources": [
+        "https://www.cisecurity.org/controls/inventory-and-control-of-enterprise-assets",
+        "https://cas.docs.cisecurity.org/en/latest/source/Controls1/"
+      ]
+    },
+    {
+      "id": "9.1-2-fix1",
+      "section": "9.1",
+      "item": "Fix: Continuous automated discovery (agent + agentless)",
+      "claim": "CIS Control 1's own implementation guidance calls for active/passive discovery tools rather than periodic manual review.",
+      "tier": "verified",
+      "note": "Named, standards-backed requirement; specific vendor tooling (InvGate, Zecurit) is implementation detail, not verified independently.",
+      "sources": [
+        "CIS Control 1 implementation guidance"
+      ]
+    },
+    {
+      "id": "9.1-2-fix2",
+      "section": "9.1",
+      "item": "Fix: Low-friction self-service registration/request workflow",
+      "claim": "Fast, simple request path reduces incentive to bypass IT.",
+      "tier": "practice_not_proof",
+      "note": "Single named SMB case study (FSD Tech), not an industry-wide statistic.",
+      "sources": [
+        "https://blogs.fsd-tech.com/shadow-it-device-risks-smb-cybersecurity-gcc"
+      ]
+    },
+    {
+      "id": "9.1-3-incident",
+      "section": "9.1",
+      "item": "Quarantine of removable media used outside the office",
+      "claim": "2008 Operation Buckshot Yankee: infected USB drive introduced Agent.BTZ worm onto DoD classified (SIPRNet) and unclassified networks; cleanup took roughly 14 months; contributed to (not solely caused) creation of U.S. Cyber Command; directly led Pentagon to restrict USB use and disable Windows AutoRun.",
+      "tier": "verified",
+      "sources": [
+        "https://www.computerworld.com/article/1548530/infected-usb-drive-blamed-for-08-military-cyber-breach.html",
+        "https://www.nbcnews.com/news/amp/wbna43429432",
+        "https://www.brookings.edu/opinions/insiders-doubt-2008-pentagon-hack-was-foreign-spy-attack",
+        "https://www.controleng.com/throwback-attack-an-attack-on-the-dod-leads-to-operation-buckshot-yankee/"
+      ],
+      "citation_note": "Prefer these contemporaneous outlets over Wikipedia as the primary citation."
+    },
+    {
+      "id": "9.1-3-fix1",
+      "section": "9.1",
+      "item": "Fix: Fast, kiosk-based scanning stations (sub-minute check)",
+      "claim": "A scanning checkpoint slow enough to cause queues will get bypassed under production pressure; speed is a security requirement.",
+      "tier": "practice_not_proof",
+      "sources": [
+        "TXOne",
+        "OPSWAT",
+        "Tyrex"
+      ]
+    },
+    {
+      "id": "9.1-3-fix2",
+      "section": "9.1",
+      "item": "Fix: Air-gap-compatible kiosks with forensic-grade logging",
+      "claim": "Kiosks work fully offline with a separate update mechanism and log every scan with a structured reason code into a SIEM.",
+      "tier": "practice_not_proof",
+      "sources": [
+        "OPSWAT MetaDefender",
+        "Tyrex"
+      ]
+    },
+    {
+      "id": "9.1-4-standard",
+      "section": "9.1",
+      "item": "Disable USB mass storage on highly sensitive machines, privileged-user exceptions only",
+      "claim": "Windows Group Policy -> Removable Storage Access is a real, documented Microsoft feature (Administrative Templates) implementing NIST MP-7's 'prohibit' selection.",
+      "tier": "verified",
+      "sources": [
+        "https://learn.microsoft.com/en-us/answers/questions/2198881/create-a-gpo-to-disable-usb-storage-devices"
+      ]
+    },
+    {
+      "id": "9.1-4-limitation",
+      "section": "9.1",
+      "item": "Disable USB mass storage - documented limitation",
+      "claim": "GPO-based USB storage blocking is not 100% reliable in practice; a Windows 11 forum thread documents an admin who enabled every relevant GPO setting and still had the machine read/execute files from an inserted USB drive.",
+      "tier": "practice_not_proof",
+      "sources": [
+        "https://www.elevenforum.com/t/unable-to-disable-usb-mass-storage-using-windows-policies-or-registry-keys.30423/"
+      ]
+    },
+    {
+      "id": "9.1-5-correction",
+      "section": "9.1",
+      "item": "Physical USB port locks",
+      "claim": "REMOVED: '96% reduction in unauthorized USB connections at a mid-sized financial services firm' after tiered rollout of physical blockers + software control.",
+      "tier": "removed",
+      "reason": "Traces to a Sasa Software (USB-security vendor) blog post naming no company, no methodology, no independent corroboration. Do not reintroduce this statistic.",
+      "sources": [
+        "https://www.sasa-software.com/learning/what-is-a-usb-blocker/"
+      ]
+    },
+    {
+      "id": "9.1-5-fix2",
+      "section": "9.1",
+      "item": "Fix: Electronic-locking docking stations (Thunderspy mitigation)",
+      "claim": "Thunderspy (disclosed by researcher Bjorn Ruytenberg) and related Thunderclap research are real, publicly documented DMA vulnerabilities in Thunderbolt allowing bypass of OS-level protections including full-disk encryption with brief physical access. Kensington sells an electronic-locking dock as a named commercial mitigation.",
+      "tier": "verified",
+      "sources": [
+        "https://www.kensington.com/news/docking-connectivity-blog/understanding-the-thunderspy-exploit-how-to-protect-your-thunderbolt-port/",
+        "https://www.infopackets.com/news/10755/thunderbolt-flaw-could-bypass-security-encryption"
+      ]
+    },
+    {
+      "id": "9.1-6-risk",
+      "section": "9.1",
+      "item": "DLP monitoring + security-awareness training as softer alternative to blocking",
+      "claim": "One-off/annual/purely informational training produces minimal durable behavior change ('awareness != behavior change').",
+      "tier": "verified",
+      "note": "Document rates this as one of the more evidence-backed claims in the whole section - a known critique in the security-awareness field generally.",
+      "sources": [
+        "https://outthink.io/community/thought-leadership/blog/security-awareness-vs-secure-behaviour-why-training-is-not-enough/"
+      ]
+    },
+    {
+      "id": "9.1-6-fix1",
+      "section": "9.1",
+      "item": "Fix: Continuous, reinforcement-based (gamified) training tied to real usage data",
+      "claim": "Human-risk platforms pair shadow IT/DLP telemetry with ongoing training cadence, simulation exercises, micro-training, and positive reinforcement instead of penalty-only messaging.",
+      "tier": "practice_not_proof",
+      "note": "Sourced from a single named vendor (Keepnet) describing its own product.",
+      "sources": [
+        "https://keepnetlabs.com/blog/secure-human-behavior-risky-employee-behavior-fuels-shadow-it"
+      ]
+    },
+    {
+      "id": "9.1-6-fix2",
+      "section": "9.1",
+      "item": "Fix: Real-time, in-the-moment coaching at point of risky action",
+      "claim": "Some DDR/DLP tools intervene at the moment of risk with an on-screen message and redirect, rather than after-the-fact training.",
+      "tier": "practice_not_proof",
+      "sources": [
+        "Cyberhaven"
+      ]
+    },
+    {
+      "id": "9.2-1-standard",
+      "section": "9.2",
+      "item": "Ownership model selection (BYOD/COPE/COBO/CYOD)",
+      "claim": "NIST SP 800-124 Rev. 2 (May 2023) organizes mobile-device deployment around a spectrum of ownership/management models. BYOD/COPE/COBO/CYOD are industry terms describing points along that spectrum, not a taxonomy NIST itself defines. NIST SP 1800-21 (COPE) and NIST SP 1800-22 (BYOD) are separate NIST practice guides with reference architectures.",
+      "tier": "verified",
+      "sources": [
+        "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-124r2.pdf",
+        "https://csrc.nist.gov/pubs/sp/1800/21/final",
+        "https://csrc.nist.gov/pubs/sp/1800/22/final"
+      ]
+    },
+    {
+      "id": "9.2-1-risk",
+      "section": "9.2",
+      "item": "Ownership model - shadow IT risk",
+      "claim": "NIST SP 800-124r2 directly and explicitly names employees resorting to personal devices, personal email, and unapproved cloud services when enterprise mobile controls are cumbersome or privacy-invasive; specifically calls out forwarding documents to personal email and photographing work information.",
+      "tier": "verified",
+      "note": "This is a verified risk pattern stated directly in the primary source, not an inference.",
+      "sources": [
+        "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-124r2.pdf"
+      ]
+    },
+    {
+      "id": "9.2-2-standard",
+      "section": "9.2",
+      "item": "Full MDM on corporate-owned, MAM on BYOD",
+      "claim": "NIST SP 800-124 describes this exact split (full device management for org-issued devices, app-level containerization for BYOD). Microsoft Intune App Protection Policies are explicitly designed to work independent of MDM enrollment.",
+      "tier": "verified",
+      "sources": [
+        "NIST SP 800-124 Rev 1 and Rev 2",
+        "https://learn.microsoft.com/en-us/intune/app-management/protection/overview"
+      ]
+    },
+    {
+      "id": "9.2-3-standard",
+      "section": "9.2",
+      "item": "Conditional Access at authentication layer regardless of ownership",
+      "claim": "NIST SP 800-207 (Zero Trust Architecture) explicitly states no implicit trust is granted based on asset ownership (enterprise or personally owned), and names BYOD by name as a driving enterprise trend.",
+      "tier": "verified",
+      "sources": [
+        "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-207.pdf"
+      ]
+    },
+    {
+      "id": "9.2-3-stat",
+      "section": "9.2",
+      "item": "Legacy authentication bypass risk",
+      "claim": "More than 97% of credential-stuffing attacks and more than 99% of password-spray attacks against Microsoft 365 tenants used legacy authentication.",
+      "tier": "verified",
+      "sources": [
+        "https://learn.microsoft.com/en-us/entra/identity/conditional-access/policy-block-legacy-authentication"
+      ],
+      "corroboration": "CIS Microsoft 365 Benchmark guidance; multiple independent security blogs"
+    },
+    {
+      "id": "9.2-4-case",
+      "section": "9.2",
+      "item": "Selective wipe on offboarding - legal basis",
+      "claim": "Rajaee v. Design Tech Homes (S.D. Tex. 2014): employee used personal iPhone for work; employer remotely wiped it, deleting both personal and work data. Court ruled AGAINST the employee on the specific legal theories raised.",
+      "tier": "verified",
+      "important_note": "This case represents an employer's wipe action being found NOT actionable under the specific claims raised, not a ruling that selective wipe is legally required. Use with legal review before citing as policy justification - do not let downstream summarization flip this into 'courts require selective wipe.'",
+      "sources": [
+        "https://www.labordish.com/2015/03/what-recent-case-law-can-teach-about-byod-workplaces/",
+        "https://www.theemployerhandbook.com/is-it-against-the-law-to-remot/"
+      ]
+    },
+    {
+      "id": "9.2-4-secondary",
+      "section": "9.2",
+      "item": "Amanda Stanton / NPR wipe case",
+      "claim": "NPR reported a Silicon Valley worker's personal iPhone was wiped by mistake by employer IT, destroying photos/contacts.",
+      "tier": "practice_not_proof",
+      "note": "Kept as secondary color; document's authors could not re-retrieve the NPR transcript during the review pass, so treat as likely-correct-but-not-independently-re-verified this pass, not load-bearing.",
+      "sources": [
+        "https://www.npr.org/transcripts/131511381"
+      ]
+    },
+    {
+      "id": "9.2-4-removed",
+      "section": "9.2",
+      "item": "Full-device-wipe statistic",
+      "claim": "REMOVED: '21%' statistic attributed to an Acronis survey via an HBR reference.",
+      "tier": "removed",
+      "reason": "Weak evidentiary chain (survey -> secondary citation -> document); could not independently verify against original survey.",
+      "sources": []
+    },
+    {
+      "id": "9.2-4-fix1",
+      "section": "9.2",
+      "item": "Fix: Intune selective wipe (MAM) - mechanism and limitation",
+      "claim": "Intune selective wipe removes only company app data, leaving personal data untouched (verified via Microsoft Learn). Limitation: uninstalling the broker/management agent (Intune Company Portal on Android, Microsoft Authenticator on iOS) before/during a pending wipe can prevent it from completing (reported via Microsoft Community Hub, March 2026 discussion, not primary MS documentation).",
+      "tier": "verified",
+      "limitation_tier": "practice_not_proof",
+      "sources": [
+        "https://learn.microsoft.com/en-us/intune/app-management/protection/wipe-corporate-data",
+        "https://techcommunity.microsoft.com/discussions/microsoft-intune/intune-mam---questions-about-company-data-removal/4507402"
+      ]
+    },
+    {
+      "id": "9.2-4-fix2",
+      "section": "9.2",
+      "item": "Fix: Conditional-launch policies (auto-wipe on schedule)",
+      "claim": "Intune app protection conditional-launch rules support a defined offline grace period after which reauthentication is required or a selective wipe triggers automatically. Current Microsoft documentation lists a 90-day default (corrected from an earlier draft's incorrect 180-day claim).",
+      "tier": "verified",
+      "sources": [
+        "https://techcommunity.microsoft.com/discussions/microsoft-intune/new-blog-post-selective-wipe-corporate-data-on-unmanagmed-devices-iosipados-and-/3914855"
+      ]
+    },
+    {
+      "id": "9.2-5-mechanism",
+      "section": "9.2",
+      "item": "Android Enterprise Recommended (AER) program",
+      "claim": "AER is a real, named, currently active Google validation program (launched Feb 2018) maintaining a list of Android devices meeting elevated enterprise requirements including published update frequency and guaranteed support end date.",
+      "tier": "verified",
+      "sources": [
+        "https://support.google.com/work/android/answer/14772109",
+        "https://developers.google.com/android/work/requirements"
+      ]
+    },
+    {
+      "id": "9.2-5-limitation",
+      "section": "9.2",
+      "item": "AER documented failure mode",
+      "claim": "Computerworld reporting (2020, follow-up ~2022) found AER-listed devices (e.g. Moto Z4) did not receive updates within program expectations at the time - major OS update 189 days after release, months with no patches, despite AER badge. Program requirements have since changed: strict 90-day patch requirement dropped for Android 15+ validations, replaced with OEM-published commitments. An independent specialist FAQ (Jason Bayton) calls AER 'a minimum bar, not a seal of quality.'",
+      "tier": "verified",
+      "note": "Historical example illustrating validation did not guarantee patch delivery at the time reported; not a description of current ongoing conditions.",
+      "sources": [
+        "https://www.computerworld.com/article/1631824/android-enterprise-recommended-devices.html",
+        "https://bayton.org/android/android-enterprise-faq/"
+      ]
+    },
+    {
+      "id": "9.2-6-incident",
+      "section": "9.2",
+      "item": "Jailbroken/rooted device blocking - underlying incident",
+      "claim": "2015 KeyRaider malware campaign: Palo Alto Networks Unit 42 (with WeipTech) reported theft of more than 225,000 valid Apple accounts plus certificates, private keys, purchasing receipts. Confirmed the malware only affected jailbroken iOS devices, since jailbreaking removes sandboxing.",
+      "tier": "verified",
+      "sources": [
+        "https://unit42.paloaltonetworks.com/keyraider-ios-malware-steals-over-225000-apple-accounts-to-create-free-app-utopia/",
+        "TechCrunch, Forbes, Ars Technica, AppleInsider (contemporaneous corroboration)"
+      ]
+    },
+    {
+      "id": "9.2-6-recent",
+      "section": "9.2",
+      "item": "Microsoft Authenticator jailbreak/root detection enforcement",
+      "claim": "Microsoft Authenticator introduced jailbreak/root detection for work/school Entra credentials; Microsoft Q&A documentation from April 2026 indicates enforcement was already active starting February 2026 - applies even to BYOD users who never enrolled in MDM.",
+      "tier": "verified",
+      "note": "Recency flag: this cites events from Feb-Apr 2026. Confirm still current at time of downstream use.",
+      "sources": [
+        "Microsoft Q&A documentation, April 2026"
+      ]
+    },
+    {
+      "id": "9.3-1-definition",
+      "section": "9.3",
+      "item": "CASB definition",
+      "claim": "CASB is a Gartner-coined term (2012) defined around four pillars: visibility, compliance, data security, threat protection. Confirmed consistent across nine unrelated vendor/reference sources.",
+      "tier": "verified",
+      "sources": [
+        "Zscaler",
+        "Fortinet",
+        "Trend Micro",
+        "Cyberhaven",
+        "Cisco",
+        "Zylo",
+        "Skyhigh Security",
+        "Cloudflare",
+        "Cloud Security Authority"
+      ]
+    },
+    {
+      "id": "9.3-2-definition",
+      "section": "9.3",
+      "item": "SMP (SaaS Management Platform) definition",
+      "claim": "SMP is a Gartner-defined market category: tools that discover, manage, optimize, and automate the SaaS application lifecycle. Modern Gartner definition includes discovery via browser extensions, device agents, financial/expense systems, CASB/SASE, SSO/IdP, endpoint management, email, and direct SaaS APIs - NOT limited to financial telemetry alone.",
+      "tier": "verified",
+      "sources": [
+        "https://www.gartner.com/reviews/market/saas-management-platforms"
+      ]
+    },
+    {
+      "id": "9.3-4-survey",
+      "section": "9.3",
+      "item": "Gartner 69%/74% employee bypass survey",
+      "claim": "Gartner surveyed 1,310 employees (May-June 2022): 69% intentionally bypassed cybersecurity guidance in past 12 months; 74% would bypass if it helped hit a business objective.",
+      "tier": "verified",
+      "correction": "The document's draft downgraded this to 'reported finding, could not locate Gartner's original publication.' FOLLOW-UP: a direct, named quote from Gartner VP Analyst Paul Furtado ('Friction that slows down employees and leads to insecure behavior is a significant driver of insider risk') was located via Intelligent CISO's March 2023 reporting, tied to this same finding. This is strong corroboration - a named analyst's directly quoted words, checkable against his real public Gartner bio and other speaking engagements on the same topic - but the primary Gartner newsroom page itself was still not directly accessed during either verification pass (Gartner press releases aren't always indexed for outside search). Tier upgraded to 'verified' on the strength of the named-analyst direct quote, with this caveat preserved rather than claiming full primary-source access.",
+      "sources": [
+        "https://www.intelligentciso.com/2023/03/08/69-employees-bypassed-organisations-cybersecurity-in-past-12-months-finds-gartner/",
+        "https://www.csoonline.com/article/575457/shadow-it-is-increasing-and-so-are-the-associated-security-risks.html",
+        "https://www.intelligentcio.com/me/2023/03/08/69-employees-bypassed-organisations-cybersecurity-in-past-12-months-finds-gartner/"
+      ]
+    },
+    {
+      "id": "9.3-4-flagged1",
+      "section": "9.3",
+      "item": "Slow procurement -> more shadow IT",
+      "claim": "FLAGGED: 'Organizations with slow procurement have 40% more shadow IT than those with fast procurement.'",
+      "tier": "flagged_unverifiable",
+      "reason": "Traces to a single vendor blog (cloudnuro.ai) citing 'a recent survey of IT leaders' with no name, date, sample size, or link.",
+      "sources": [
+        "https://www.cloudnuro.ai/blog/saas-purchase-controls"
+      ]
+    },
+    {
+      "id": "9.3-4-flagged2",
+      "section": "9.3",
+      "item": "IT departments keeping pace with tech requests",
+      "claim": "FLAGGED: 'Only 12% of IT departments can keep pace with new technology requests.'",
+      "tier": "flagged_unverifiable",
+      "reason": "Traces through a single vendor's own 'statistics analysis' page (Josys) without a named original survey.",
+      "sources": []
+    },
+    {
+      "id": "9.5-natwest",
+      "section": "9.5",
+      "item": "NatWest messaging app ban",
+      "claim": "NatWest blocked WhatsApp, Facebook Messenger, and Skype on company-issued devices in the UK, effective November 6, 2024.",
+      "tier": "verified",
+      "note": "Independently confirmed across 9+ outlets in a follow-up check (Personnel Today, Computing.co.uk, FStech, HR Grapevine, TechRadar Pro, The Independent/AOL, and others), consistent spokesperson quote and effective date. ADDITIONAL NUANCE not in original document: The Register reported the actual blocked-app list was longer than the three named apps - treat 'three apps' framing as an undersell if precision matters downstream.",
+      "sources": [
+        "https://www.personneltoday.com/hr/natwest-work-communications/",
+        "https://www.computing.co.uk/news/2024/natwest-blocks-whatsapp-work-devices",
+        "https://forums.theregister.com/forum/all/2024/11/14/natwest_blocks_bevy_of_apps/"
+      ]
+    },
+    {
+      "id": "9.5-fines",
+      "section": "9.5",
+      "item": "US bank off-channel-communication fines",
+      "claim": "US regulatory fines for off-channel communications (WhatsApp/Signal etc.) totaled more than $2 billion as of August 2023 (SEC and CFTC combined).",
+      "tier": "verified",
+      "sources": [
+        "NBC News, Aug 2023",
+        "Goodwin law firm client alert",
+        "Redgrave LLP client alert"
+      ]
+    },
+    {
+      "id": "9.6-flagged1",
+      "section": "9.6",
+      "item": "Healthcare shadow-AI reduction statistic",
+      "claim": "FLAGGED: '89% reduction' in shadow AI use in healthcare, attributed to 'Healthcare Brew, 2026.'",
+      "tier": "flagged_unverifiable",
+      "reason": "Repeated by two vendor sources (Vectra.ai, soapnoteai.com) with no link. Direct check of Healthcare Brew's own site found no article reporting an 89% figure; their actual reporting cites different statistics from Wolters Kluwer and Paubox surveys.",
+      "sources": [
+        "https://www.vectra.ai/topics/shadow-ai",
+        "https://www.soapnoteai.com/soap-note-guides-and-example/shadow-ai-healthcare-2026/"
+      ],
+      "do_not_use": true
+    },
+    {
+      "id": "9.6-flagged2",
+      "section": "9.6",
+      "item": "Shadow-AI reduction pairing statistic",
+      "claim": "FLAGGED: '54%/12%' shadow-AI-reduction pairing, attributed to '(Microsoft, 2025).'",
+      "tier": "flagged_unverifiable",
+      "reason": "Traces to a single vendor blog (agamisoft.com); no locatable Microsoft study reports these figures; no other independent source repeats this specific pairing.",
+      "sources": [
+        "https://www.agamisoft.com/shadow-ai-risk-management-enterprise-2026"
+      ],
+      "do_not_use": true
+    },
+    {
+      "id": "9.6-directional",
+      "section": "9.6",
+      "item": "Shadow AI - directional finding (without the flagged specific numbers)",
+      "claim": "Multiple independent named surveys (Wolters Kluwer Dec 2025 healthcare survey of 500+ workers; Forbes Business Council citing 40% of healthcare professionals encountering unauthorized AI; ManageEngine ITDM survey) converge qualitatively: employees turn to unsanctioned AI tools when sanctioned tools are missing, slow, or lack functionality.",
+      "tier": "verified",
+      "note": "The direction of this finding is well-supported; the specific 89% and 54%/12% effect-size figures above are NOT.",
+      "sources": [
+        "https://www.wolterskluwer.com/en/expert-insights/shadow-ai-providers-are-using-unapproved-tools-to-improve-workflow"
+      ]
+    },
+    {
+      "id": "9.8-platform",
+      "section": "9.8",
+      "item": "Cloud provider organizational governance controls",
+      "claim": "AWS Organizations (Service Control Policies), Azure Management Groups (Azure Policy), and GCP Organization Policy are each provider's own native, current account-governance products designed to prevent account creation outside a governed boundary.",
+      "tier": "verified",
+      "sources": [
+        "AWS, Azure, GCP primary documentation"
+      ]
+    },
+    {
+      "id": "9.9-study",
+      "section": "9.9",
+      "item": "Forrester/Armis IoT study",
+      "claim": "'The State of Enterprise IoT Security: Unmanaged and Unsecured' is a real Forrester Consulting Thought Leadership paper, surveying 400+ enterprise technology decision-makers, presented by a named Forrester VP Research Director (Merritt Maxim).",
+      "tier": "verified",
+      "important_caveat": "This was a Forrester Consulting paper COMMISSIONED BY Armis, an IoT-security vendor with a commercial interest in the finding. Cite as 'a Forrester Consulting study commissioned by Armis,' not simply 'a Forrester study.' Forrester's own non-commissioned 'State of IoT Security, 2024' report (via TechTarget) corroborates the general direction independently.",
+      "sources": [
+        "https://info.armis.com/rs/645-PDC-047/images/State-Of-Enterprise-IoT-Security-Unmanaged-And-Unsecured.pdf",
+        "https://www.techtarget.com/iotagenda/tip/5-IoT-security-threats-to-prioritize"
+      ]
+    },
+    {
+      "id": "9.10-1-standard",
+      "section": "9.10",
+      "item": "Unauthorized Remote-Access/RMM Software",
+      "claim": "CIS Controls v8.1 Control 2 (Safeguards 2.5/2.6) requires application allowlisting so only authorized software can execute, and requires unauthorized software to be removed or receive a documented exception, reviewed monthly or more frequently.",
+      "tier": "verified",
+      "sources": [
+        "https://www.cisecurity.org/controls/inventory-and-control-of-software-assets",
+        "https://cas.docs.cisecurity.org/en/latest/source/Controls2/"
+      ]
+    },
+    {
+      "id": "9.10-2-advisory",
+      "section": "9.10",
+      "item": "CISA AA23-025A RMM abuse advisory",
+      "claim": "CISA/NSA/MS-ISAC jointly published AA23-025A (Jan 25, 2023) documenting a real campaign (first observed Oct 2022) in which threat actors used portable, no-install AnyDesk/ScreenConnect executables to gain local access, explicitly bypassing common software controls because portable executables require neither admin privileges nor a tracked install.",
+      "tier": "verified",
+      "sources": [
+        "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-025a",
+        "https://www.infosecurity-magazine.com/news/cisa-warns-malicious-use-rmm/"
+      ]
+    },
+    {
+      "id": "9.10-3-flagged-mischaracterization",
+      "section": "9.10",
+      "item": "Vendor blog characterization of AA23-320A",
+      "claim": "A MagicSword blog post describes CISA advisory AA23-320A as an \"updated joint advisory\" specifically about RMM software abuse, released July 25, 2025.",
+      "tier": "flagged",
+      "important_note": "Checked directly against CISA's own AA23-320A page: this advisory is actually the Scattered Spider threat-actor advisory (orig. Nov 16, 2023, updated Jul 29, 2025), not a dedicated RMM-abuse advisory. It names several remote-access tools among software that group is known to abuse, but the blog's framing overstates its scope. Do not cite AA23-320A as a standalone RMM advisory.",
+      "do_not_use": true,
+      "sources": [
+        "https://www.magicsword.io/blog/cisa-rmm-abuse-lolrmm-magicsword-blocking"
+      ]
+    },
+    {
+      "id": "9.10-4-verified-scope",
+      "section": "9.10",
+      "item": "AA23-320A actual scope (Scattered Spider)",
+      "claim": "CISA advisory AA23-320A is the \"Scattered Spider\" joint advisory (FBI/CISA/RCMP/ASD's ACSC/AFP/CCCS/NCSC-UK), originally published November 16, 2023 and updated July 29, 2025, covering that threat actor group's broader TTPs. It names TeamViewer, AnyDesk, Tailscale, Teleport.sh, and Tactical.RMM among legitimate tools the group is known to abuse, alongside dedicated malware.",
+      "tier": "verified",
+      "sources": [
+        "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-320a"
+      ]
+    },
+    {
+      "id": "9.10-5-lolrmm",
+      "section": "9.10",
+      "item": "LOLRMM catalog",
+      "claim": "LOLRMM (lolrmm.io) is a community-maintained catalog of RMM tools observed being abused in real attacks, usable as a cross-check resource against an organization's approved software list.",
+      "tier": "practice",
+      "important_note": "Completeness and maintenance cadence not independently audited.",
+      "sources": [
+        "https://lolrmm.io"
+      ]
+    },
+    {
+      "id": "9.10-6-p2p-standard",
+      "section": "9.10",
+      "item": "P2P/torrent clients governance",
+      "claim": "Peer-to-peer/torrent clients fall under the same CIS Control 2 application-allowlisting requirement as any other unauthorized software. No P2P-specific federal advisory analogous to AA23-025A was found, so this item rests on the general standard rather than an incident-specific citation.",
+      "tier": "verified",
+      "sources": [
+        "https://www.cisecurity.org/controls/inventory-and-control-of-software-assets"
+      ]
+    }
+  ],
+  "cross_cutting_claim": {
+    "claim": "Across all nine subsections (9.1-9.9), every category of shadow IT traces to the same root mechanism: a sanctioned path that is slower, more restrictive, or less capable than the workaround. Durable fixes are structural (match sanctioned-path speed/capability to the need, or extend visibility to the channel in use), not punitive.",
+    "tier": "practice_not_proof",
+    "note": "This is a synthesized pattern-level claim across the document, not a single sourced statistic. Treat as the document's organizing thesis, supported by the accumulation of individual verified/practice-tier items above, not as an independently proven causal finding in itself."
+  }
+}

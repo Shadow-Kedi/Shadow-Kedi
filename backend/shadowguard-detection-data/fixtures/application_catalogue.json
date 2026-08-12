@@ -1,0 +1,17 @@
+[
+  {"name":"ChatGPT","domain":"chatgpt.com","publisher":null,"category":"ai","approval_state":"conditional","risk_weight":10},
+  {"name":"Claude","domain":"claude.ai","publisher":null,"category":"ai","approval_state":"conditional","risk_weight":10},
+  {"name":"Gemini","domain":"gemini.google.com","publisher":null,"category":"ai","approval_state":"conditional","risk_weight":10},
+  {"name":"Perplexity","domain":"perplexity.ai","publisher":null,"category":"ai","approval_state":"unapproved","risk_weight":15},
+  {"name":"Dropbox","domain":"dropbox.com","publisher":null,"category":"cloud_storage","approval_state":"unapproved","risk_weight":25},
+  {"name":"WeTransfer","domain":"wetransfer.com","publisher":null,"category":"cloud_storage","approval_state":"unapproved","risk_weight":25},
+  {"name":"Google Drive","domain":"drive.google.com","publisher":null,"category":"cloud_storage","approval_state":"approved","risk_weight":5},
+  {"name":"Microsoft 365","domain":"office.com","publisher":null,"category":"collaboration","approval_state":"approved","risk_weight":2},
+  {"name":"Slack","domain":"slack.com","publisher":null,"category":"collaboration","approval_state":"approved","risk_weight":5},
+  {"name":"Notion","domain":"notion.so","publisher":null,"category":"collaboration","approval_state":"conditional","risk_weight":8},
+  {"name":"GitHub","domain":"github.com","publisher":null,"category":"development","approval_state":"approved","risk_weight":2},
+  {"name":"Trello","domain":"trello.com","publisher":null,"category":"collaboration","approval_state":"conditional","risk_weight":8},
+  {"name":"Asana","domain":"asana.com","publisher":null,"category":"collaboration","approval_state":"conditional","risk_weight":8},
+  {"name":"Zoom","domain":"zoom.us","publisher":null,"category":"collaboration","approval_state":"approved","risk_weight":5},
+  {"name":"WhatsApp","domain":"whatsapp.com","publisher":null,"category":"social","approval_state":"unapproved","risk_weight":20}
+]

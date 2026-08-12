@@ -216,3 +216,24 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ============================================================
+# Shadow Kedi project-specific
+# ============================================================
+
+# Licensed data — CERT r4.2 cannot be redistributed (see license.txt)
+data/raw/cert/
+data/synthetic/cert_events.jsonl
+data/processed/normalized_cert_events.jsonl
+
+# Generated/derived data — large, regenerable, not for version control
+data/raw/
+data/synthetic/
+data/processed/
+data/models/
+
+# Keep the folder structure visible in the repo without the (large/licensed) contents
+!data/raw/.gitkeep
+!data/synthetic/.gitkeep
+!data/processed/.gitkeep
+!data/models/.gitkeep
