@@ -46,6 +46,7 @@ Usage:
 """
 
 import argparse
+import json
 from pathlib import Path
 
 import joblib
@@ -97,7 +98,19 @@ def build_daily_aggregates(scores_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def attach_recommendations(daily: pd.DataFrame, rec_engine: RecommendationEngine) -> pd.DataFrame:
-    section_titles, fix_titles, statuses = [], [], []
+    """
+    recommended_fixes is kept as a JSON-encoded list of {title,
+    evidence_tier} objects, NOT a joined string -- per Frontend/Dashboard's
+    direct request (Q&A: "My recommended-alternative text is already
+    short, discrete phrases per category... tags will fit better than a
+    paragraph"). recommendations.py's own get_recommendation() already
+    returns this shape; the only change needed here is to STOP collapsing
+    it into "; ".join(...) before writing out. json.dumps is used (not a
+    raw Python list) so the CSV cell is a single well-formed value
+    Frontend can parse, rather than a list that pandas would otherwise
+    stringify unpredictably.
+    """
+    section_titles, fixes_json, statuses = [], [], []
     for _, row in daily.iterrows():
         if row["_source"] == "shadow_it_synthetic" and pd.notna(row.get("shadow_it_category")):
             rec = rec_engine.get_recommendation(shadow_it_category=row["shadow_it_category"])
@@ -109,13 +122,13 @@ def attach_recommendations(daily: pd.DataFrame, rec_engine: RecommendationEngine
         statuses.append(rec.get("status"))
         section_titles.append(rec.get("section_title"))
         if rec.get("status") == "ok":
-            fix_titles.append("; ".join(f["title"] for f in rec["recommended_fixes"]))
+            fixes_json.append(json.dumps(rec["recommended_fixes"]))  # list of {title, evidence_tier}, not joined
         else:
-            fix_titles.append(None)
+            fixes_json.append(None)
 
     daily["recommendation_status"] = statuses
     daily["recommended_section"] = section_titles
-    daily["recommended_fixes"] = fix_titles
+    daily["recommended_fixes"] = fixes_json
     return daily
 
 
