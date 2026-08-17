@@ -11,7 +11,18 @@ dependencies = [
   "pydantic-settings>=2.4,<3",
   "celery>=5.4,<6",
   "redis>=5,<7",
-  "psycopg[binary]>=3.2,<4"
+  "psycopg[binary]>=3.2,<4",
+  # Required only by the ML pipeline bridge (app/ml_scoring.py ->
+  # pipeline/scorer.py, pipeline/recommendation_tier.py at the repo root).
+  # scikit-learn isn't imported directly here -- joblib.load() needs it
+  # installed to unpickle the trained DecisionTreeClassifier/RandomForest
+  # bundle. Kept as real (not optional) dependencies since
+  # recompute_shadow_kedi_ml_scores is on the beat schedule by default;
+  # see that task's own docstring in app/tasks.py for how it degrades
+  # when the trained model file itself isn't present.
+  "joblib>=1.4,<2",
+  "pandas>=2.2,<3",
+  "scikit-learn>=1.5,<2"
 ]
 
 [project.optional-dependencies]

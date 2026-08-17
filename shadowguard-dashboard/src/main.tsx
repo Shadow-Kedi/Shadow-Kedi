@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { createRoot } from 'react-dom/client';
 // Self-hosted (no external font CDN) -- must load before ./charts, which reads
 // the resulting CSS custom properties at module init. See tokens.css.
@@ -10,10 +10,11 @@ import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/500.css';
 import '@fontsource/jetbrains-mono/700.css';
 import './tokens.css';
-import { api, useMocks, type LeaderboardEntry } from './api';
+import { api, type LeaderboardEntry } from './api';
 import type { Alert, AppInventory, Overview, PolicyTrigger, Role, UserProfile } from './types';
-import { ACCENT, BarChart, DonutChart, LineTrendChart, SEVERITY_COLORS, SEVERITY_ORDER } from './charts';
+import { ACCENT, BarChart, DonutChart, LineTrendChart, SEVERITY_COLORS, SEVERITY_ORDER, Sparkline, withAlpha } from './charts';
 import { HeartbeatIndicator, useHeartbeat } from './heartbeat';
+import { IconAlertTriangle, IconLayoutDashboard, IconRadar2, IconTrendingUp, IconTrophy } from '@tabler/icons-react';
 import './styles.css';
 import './overrides.css';
 import './effects.css';
@@ -142,7 +143,7 @@ function App(){const [role,setRole]=useState<Role>('viewer');const [view,setView
  const openUser=(id:string)=>{setProfileLoading(true);setProfileError(undefined);return api.user(id).then(x=>{setProfile(x);setProfileError(undefined);setView('user')}).catch(()=>setProfileError(id)).finally(()=>setProfileLoading(false))};
  const nav=(to:View)=>{setError('');setProfileError(undefined);setView(to)};
  const onReviewed=async(id:string)=>{try{await api.reviewAlert(id,'resolved');nav('alerts')}catch(e){setError((e as Error).message)}};
- return <><CustomCursor/><main><a className="skip" href="#content">Skip to content</a><header><div><span className="logo">◐</span><strong>Shadow Kedi</strong><span className="sub">Human-reviewed Shadow IT triage</span><HeartbeatIndicator info={heartbeat}/></div><label>Role <select value={role} onChange={e=>setRole(e.target.value as Role)} aria-label="Demo role"><option value="viewer">Viewer</option><option value="analyst">Analyst</option></select></label></header>{useMocks&&<div className="demo"><b>Demo</b><span>This dashboard is using clearly marked mock records, not live data. Configure <code>VITE_API_URL</code> and set <code>VITE_USE_MOCKS=false</code> to connect your API.</span></div>}<div className="shell"><nav aria-label="Primary navigation"><button className={view==='overview'?'active':''} onClick={()=>nav('overview')}>Overview</button><button className={view==='alerts'||view==='detail'?'active':''} onClick={()=>nav('alerts')}>Alerts</button><button className={view==='leaderboard'?'active':''} onClick={()=>nav('leaderboard')}>Leaderboard</button><button className={view==='trends'?'active':''} onClick={()=>nav('trends')}>Trends &amp; Policy</button><button className={view==='apps'?'active':''} onClick={()=>nav('apps')}>Discovery map</button></nav><section id="content" key={view} className="content page-fade-in">{error&&<ErrorBox message={error}/>} {profileError&&<ProfileErrorBox retrying={profileLoading} onRetry={()=>openUser(profileError)}/>} {view==='overview'&&<OverviewPage data={overview} openAlert={openAlert} openUser={openUser}/>} {view==='alerts'&&<AlertsPage rows={alertRows} total={total} query={query} setQuery={setQuery} openAlert={openAlert}/>} {view==='detail'&&selected&&<DetailPage alert={selected} role={role} back={()=>nav('alerts')} openUser={openUser} onReviewed={onReviewed} openAlert={openAlert}/>} {view==='user'&&profile&&<UserPage profile={profile} openAlert={openAlert} back={()=>nav('alerts')}/>} {view==='leaderboard'&&<LeaderboardPage rows={leaderboard} openUser={openUser}/>} {view==='trends'&&<TrendsPage triggers={trends}/>} {view==='apps'&&<AppsPage apps={apps} role={role} requestExport={async()=>{try{await api.downloadCsv();setExportMessage('CSV export downloaded.')}catch(e){setError((e as Error).message)}}} message={exportMessage}/>}</section></div></main></>}
+ return <><CustomCursor/><main><a className="skip" href="#content">Skip to content</a><header><div><svg className="logo" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M12,22 C7.4,19.6 4,16.4 4,11.2 L4.4,2.6 L9.1,7.3 L12,5.1 L14.9,7.3 L19.6,2.6 L20,11.2 C20,16.4 16.6,19.6 12,22 Z" fill="currentColor"/></svg><strong>Shadow Kedi</strong><span className="sub">Human-reviewed Shadow IT triage</span><HeartbeatIndicator info={heartbeat}/></div><label>Role <select value={role} onChange={e=>setRole(e.target.value as Role)} aria-label="Demo role"><option value="viewer">Viewer</option><option value="analyst">Analyst</option></select></label></header><div className="shell"><nav aria-label="Primary navigation"><button className={view==='overview'?'active':''} onClick={()=>nav('overview')}><IconLayoutDashboard size={18} stroke={1.75}/><span>Overview</span></button><button className={view==='alerts'||view==='detail'?'active':''} onClick={()=>nav('alerts')}><IconAlertTriangle size={18} stroke={1.75}/><span>Alerts</span></button><button className={view==='leaderboard'?'active':''} onClick={()=>nav('leaderboard')}><IconTrophy size={18} stroke={1.75}/><span>Leaderboard</span></button><button className={view==='trends'?'active':''} onClick={()=>nav('trends')}><IconTrendingUp size={18} stroke={1.75}/><span>Trends &amp; Policy</span></button><button className={view==='apps'?'active':''} onClick={()=>nav('apps')}><IconRadar2 size={18} stroke={1.75}/><span>Discovery map</span></button></nav><section id="content" key={view} className="content page-fade-in">{error&&<ErrorBox message={error}/>} {profileError&&<ProfileErrorBox retrying={profileLoading} onRetry={()=>openUser(profileError)}/>} {view==='overview'&&<OverviewPage data={overview} openAlert={openAlert} openUser={openUser}/>} {view==='alerts'&&<AlertsPage rows={alertRows} total={total} query={query} setQuery={setQuery} openAlert={openAlert}/>} {view==='detail'&&selected&&<DetailPage alert={selected} role={role} back={()=>nav('alerts')} openUser={openUser} onReviewed={onReviewed} openAlert={openAlert}/>} {view==='user'&&profile&&<UserPage profile={profile} openAlert={openAlert} back={()=>nav('alerts')}/>} {view==='leaderboard'&&<LeaderboardPage rows={leaderboard} openUser={openUser}/>} {view==='trends'&&<TrendsPage triggers={trends}/>} {view==='apps'&&<AppsPage apps={apps} role={role} requestExport={async()=>{try{await api.downloadCsv();setExportMessage('CSV export downloaded.')}catch(e){setError((e as Error).message)}}} message={exportMessage}/>}</section></div></main></>}
 
 function OverviewPage({data,openAlert,openUser}:{data?:Overview;openAlert:(a:Alert)=>void;openUser:(id:string)=>void}){
   if(!data)return <p className="loading">Loading overview…</p>;
@@ -152,7 +153,7 @@ function OverviewPage({data,openAlert,openUser}:{data?:Overview;openAlert:(a:Ale
   const trend=data.weeklyTrend??[];
   return <>
     <div className="title"><div><p className="eyebrow">Security operations</p><h1>Review what needs attention</h1><p>Signals support a human decision; they do not prove intent.</p></div></div>
-    <div className="cards">{Object.entries(data.severityCounts).sort(([a],[b])=>severityRank[b as keyof typeof severityRank]-severityRank[a as keyof typeof severityRank]).map(([k,v])=><article className="metric" key={k}><span className={`dot ${k}${k==='critical'&&v>0?' pulse-critical':''}`}/><b><Score value={v}/></b><span>{k} alerts</span></article>)}<article className="metric"><b><Score value={data.newApps}/></b><span>new apps this week</span></article><article className="metric"><b><Score value={data.reviewedThisWeek}/></b><span>reviewed this week</span></article></div>
+    <div className="cards">{Object.entries(data.severityCounts).sort(([a],[b])=>severityRank[b as keyof typeof severityRank]-severityRank[a as keyof typeof severityRank]).map(([k,v])=><article className="metric" key={k}><span className={`dot ${k}${k==='critical'&&v>0?' pulse-critical':''}`}/><b><Score value={v}/></b><span>{k} alerts</span>{data.dailyTrend&&<Sparkline values={data.dailyTrend[k as keyof typeof data.dailyTrend]} color={SEVERITY_COLORS[k as keyof typeof SEVERITY_COLORS]}/>}</article>)}<article className="metric"><b><Score value={data.newApps}/></b><span>new apps this week</span></article><article className="metric"><b><Score value={data.reviewedThisWeek}/></b><span>reviewed this week</span>{data.dailyTrend&&<Sparkline values={data.dailyTrend.reviewed} color={ACCENT}/>}</article></div>
     {typeof data.fileIntegrityCount==='number'&&data.fileIntegrityCount>0&&<p className="hint fim-note" title="Routine file-integrity / registry checksum checks (Wazuh's FIM module) -- not Shadow IT activity. Still counted in the totals above since they're real events, broken out here so the total doesn't read as more signal than it is.">Includes <b className="mono">{data.fileIntegrityCount}</b> routine file-integrity check{data.fileIntegrityCount===1?'':'s'} (not Shadow IT activity) — hover for detail</p>}
     <div className="chart-grid">
       <div className="panel chart-panel"><h3>Severity mix</h3><DonutChart labels={severityLabels} values={severityValues} colors={severityColors} height={190} ariaLabel="Alert severity mix"/></div>
@@ -219,11 +220,30 @@ function UserPage({profile,openAlert,back}:{profile:UserProfile;openAlert:(a:Ale
   </>;
 }
 
+// Bonus item: small circular initials avatar per row, inspired by the
+// smartnet reference's "Events per user" list. Color is deterministic per
+// name (a stable hash into our existing severity/accent palette), not
+// random per render and not a new color system -- same identity, just
+// applied per-user instead of per-severity.
+const AVATAR_COLORS = [ACCENT, SEVERITY_COLORS.low, SEVERITY_COLORS.medium, SEVERITY_COLORS.high, SEVERITY_COLORS.critical];
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+function Avatar({ name }: { name: string }) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  const color = AVATAR_COLORS[hash % AVATAR_COLORS.length];
+  return <span className="avatar mono" style={{ background: withAlpha(color, 0.2), color, borderColor: withAlpha(color, 0.55) }} aria-hidden="true">{initials(name)}</span>;
+}
+
 function LeaderboardPage({rows,openUser}:{rows:LeaderboardEntry[];openUser:(id:string)=>void}){
   return <>
     <div className="title"><div><p className="eyebrow">User risk</p><h1>Leaderboard</h1><p>Users ranked by their highest single alert score.</p></div></div>
     {rows.length>0&&<div className="panel chart-panel"><h3>Max score by user</h3><BarChart labels={rows.map(u=>u.userName)} values={rows.map(u=>u.maxScore)} colors={rows.map(u=>SEVERITY_COLORS[u.topSeverity as keyof typeof SEVERITY_COLORS]??ACCENT)} horizontal suggestedMax={100} height={Math.max(160,rows.length*34)} ariaLabel="Maximum alert score by user"/></div>}
-    <section className="panel"><div className="table header leaderboard-row"><span>User</span><span>Top severity</span><span>Max score</span><span>Alerts</span></div>{rows.length?rows.map(u=><button className={`row leaderboard-row${u.topSeverity==='critical'?' pulse-critical':''}`} key={u.userId} onClick={()=>openUser(u.userId)}><span><b className="mono">{u.userName}</b></span><Badge kind={u.topSeverity}>{u.topSeverity}</Badge><b><Score value={u.maxScore}/></b><span className="mono">{u.alertCount}</span></button>):<p className="empty">No alert data yet.</p>}</section>
+    <section className="panel"><div className="table header leaderboard-row"><span>User</span><span>Top severity</span><span>Max score</span><span>Alerts</span></div>{rows.length?rows.map(u=><button className={`row leaderboard-row${u.topSeverity==='critical'?' pulse-critical':''}`} key={u.userId} onClick={()=>openUser(u.userId)}><span className="user-cell"><Avatar name={u.userName}/><b className="mono">{u.userName}</b></span><Badge kind={u.topSeverity}>{u.topSeverity}</Badge><b><Score value={u.maxScore}/></b><span className="mono">{u.alertCount}</span></button>):<p className="empty">No alert data yet.</p>}</section>
   </>;
 }
 
@@ -248,13 +268,110 @@ function TrendsPage({triggers}:{triggers?:PolicyTrigger[]}){
   </>;
 }
 
+// Simple spiral-placement circle packer -- NOT a true tight/hexagonal pack
+// (no d3-hierarchy dependency added just for this), but it satisfies what
+// was actually asked: "loosely clustered rather than gridded", with real
+// non-overlap. Each circle spirals outward from center until it finds a
+// free spot; bigger circles (placed first, since callers should pre-sort
+// by radius descending) claim the center, smaller ones settle toward the
+// edges -- the same general shape the fortexa reference has.
+function packCircles(radii: number[], width: number, height: number): { x: number; y: number }[] {
+  const centerX = width / 2, centerY = height / 2;
+  const placed: { x: number; y: number; r: number }[] = [];
+  for (const r of radii) {
+    let x = centerX, y = centerY;
+    if (placed.length > 0) {
+      let angle = 0, radius = 0;
+      for (let attempt = 0; attempt < 2000; attempt++) {
+        angle += 8;
+        radius += 0.6;
+        x = centerX + radius * Math.cos((angle * Math.PI) / 180);
+        y = centerY + radius * Math.sin((angle * Math.PI) / 180);
+        const overlaps = placed.some((p) => Math.hypot(p.x - x, p.y - y) < p.r + r + 5);
+        const inBounds = x - r > 4 && x + r < width - 4 && y - r > 4 && y + r < height - 4;
+        if (!overlaps && inBounds) break;
+      }
+    }
+    placed.push({ x, y, r });
+  }
+  return placed.map(({ x, y }) => ({ x, y }));
+}
+
+/** Item 3: same applications data as the mini-donuts above, a second visual
+ * angle on it -- one circle per app, sized by active_users, colored by
+ * approval status (reusing APPROVAL_COLOR, not a new palette). Label inside
+ * the circle when it's big enough to hold text; otherwise a native <title>
+ * (real browser tooltip, no custom hover-card component needed). */
+function AppBubbleCluster({ apps }: { apps: AppInventory[] }) {
+  const width = 760, height = 320;
+  const maxUsers = Math.max(...apps.map((a) => a.activeUsers), 1);
+  const minR = 16, maxR = 58;
+  // sqrt scale: area (not radius) proportional to activeUsers, the standard
+  // bubble-chart convention -- a linear radius scale would make small teams
+  // look disproportionately tiny next to large ones.
+  const radiusFor = (users: number) => minR + (maxR - minR) * Math.sqrt(users / maxUsers);
+  const items = useMemo(
+    () => [...apps].sort((a, b) => b.activeUsers - a.activeUsers).map((a) => ({ ...a, r: radiusFor(a.activeUsers) })),
+    [apps, maxUsers],
+  );
+  const positions = useMemo(() => packCircles(items.map((i) => i.r), width, height), [items]);
+
+  if (apps.length === 0) return <p className="empty">No applications to cluster yet.</p>;
+
+  return (
+    <svg className="bubble-cluster" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Applications sized by active users, colored by approval status">
+      {items.map((item, i) => {
+        const { x, y } = positions[i];
+        const color = APPROVAL_COLOR[item.approval] ?? ACCENT;
+        const showLabel = item.r >= 26;
+        const label = item.name.length > 14 ? item.name.slice(0, 12) + '…' : item.name;
+        return (
+          <g key={item.id} className="bubble" tabIndex={0}>
+            <title>{item.name} — {item.category} · {item.activeUsers} active user{item.activeUsers===1?'':'s'} · {item.approval}</title>
+            <circle cx={x} cy={y} r={item.r} fill={withAlpha(color, 0.28)} stroke={color} strokeWidth={1.5} />
+            {showLabel && <text x={x} y={y} textAnchor="middle" dominantBaseline="middle">{label}</text>}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function AppsPage({apps,role,requestExport,message}:{apps:AppInventory[];role:Role;requestExport:()=>void;message:string}){
-  const approvalMix=countBy(apps.map(a=>a.approval));
-  const approvalLabels=Object.keys(approvalMix);
+  const [view,setView]=useState<'rings'|'clusters'>('rings');
+  // Per-category Safe/Untrusted split, weighted by active users -- "Safe"
+  // means sanctioned; "review" counts as Untrusted here too (not yet
+  // confirmed safe), same as everywhere else this codebase treats approval
+  // as a binary trust question. Real data only: a category with zero apps
+  // just doesn't appear, no empty/fake ring rendered for it.
+  const categoryBreakdown=useMemo(()=>{
+    const byCat=new Map<string,{safe:number;untrusted:number}>();
+    for(const a of apps){
+      const entry=byCat.get(a.category)??{safe:0,untrusted:0};
+      if(a.approval==='sanctioned')entry.safe+=a.activeUsers; else entry.untrusted+=a.activeUsers;
+      byCat.set(a.category,entry);
+    }
+    return [...byCat.entries()]
+      .map(([category,{safe,untrusted}])=>({category,safe,untrusted,total:safe+untrusted,pct:safe+untrusted>0?Math.round((safe/(safe+untrusted))*100):0}))
+      .filter(c=>c.total>0)
+      .sort((a,b)=>b.total-a.total);
+  },[apps]);
   return <>
     <div className="title"><div><p className="eyebrow">Application discovery</p><h1>Inventory for review</h1><p>Approval status reflects the tenant’s inventory, not a safety judgment.</p></div><div>{role==='analyst'?<button className="primary" onClick={requestExport}>Download CSV export</button>:<button className="primary" disabled>Download CSV export</button>}<small className="block">{role==='viewer'?'Viewer role: export requests are unavailable.':'Downloads a CSV of all current alerts.'}</small></div></div>
     {message&&<div className="success" role="status">{message}</div>}
-    {approvalLabels.length>0&&<div className="panel chart-panel"><h3>Approval mix</h3><DonutChart labels={approvalLabels} values={approvalLabels.map(k=>approvalMix[k])} colors={approvalLabels.map(k=>APPROVAL_COLOR[k]??ACCENT)} height={180} ariaLabel="Application approval status mix"/></div>}
+    {categoryBreakdown.length>0&&<div className="panel chart-panel">
+      <div className="discovery-view-header">
+        <h3>Approval mix by category</h3>
+        <div className="view-toggle" role="tablist" aria-label="Approval mix view">
+          <button role="tab" aria-selected={view==='rings'} className={view==='rings'?'active':''} onClick={()=>setView('rings')}>Rings</button>
+          <button role="tab" aria-selected={view==='clusters'} className={view==='clusters'?'active':''} onClick={()=>setView('clusters')}>Clusters</button>
+        </div>
+      </div>
+      {view==='rings'?<>
+        <div className="mini-donut-legend"><span className="legend-dot low"/>Safe<span className="legend-dot high"/>Untrusted</div>
+        <div className="mini-donut-row">{categoryBreakdown.map(c=><div className="mini-donut" key={c.category}><DonutChart labels={['Safe','Untrusted']} values={[c.safe,c.untrusted]} colors={[SEVERITY_COLORS.low,SEVERITY_COLORS.high]} height={112} showLegend={false} centerLabel={{value:`${c.pct}%`,caption:c.category}} ariaLabel={`${c.category}: ${c.pct}% safe by active users`}/></div>)}</div>
+      </>:<AppBubbleCluster apps={apps}/>}
+    </div>}
     <section className="panel apps"><div className="appheader"><span>Application</span><span>Category</span><span>Approval</span><span>Active users</span><span>Review</span></div>{apps.length?apps.map(a=><div className="approw" key={a.id}><b className="mono">{a.name}</b><span className="mono">{a.category}</span><Badge kind={a.approval}>{a.approval}</Badge><span className="mono">{a.activeUsers}</span><Badge kind={a.review}>{a.review}</Badge></div>):<p className="loading">Loading inventory…</p>}</section>
   </>;
 }

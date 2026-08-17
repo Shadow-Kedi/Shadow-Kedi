@@ -29,6 +29,12 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.recompute_baselines_from_live_data",
         "schedule": crontab(hour=2, minute=0),
     },
+    # Offset from baselines (02:00) so the two don't contend for the same
+    # DB rows/CPU at once -- no dependency between them either way.
+    "recompute-shadow-kedi-ml-scores-daily": {
+        "task": "app.tasks.recompute_shadow_kedi_ml_scores",
+        "schedule": crontab(hour=3, minute=0),
+    },
 }
 
 
@@ -59,3 +65,56 @@ def recompute_baselines_from_live_data() -> dict[str, int]:
     cfg = settings()
     with SessionLocal() as session:
         return recompute_baselines_from_canonical_events(session, cfg.domain_hash_key, cfg.baseline_window_days)
+
+
+@celery_app.task
+def recompute_shadow_kedi_ml_scores() -> dict[str, int]:
+    """Scheduled daily via beat_schedule above (offset to 03:00, after
+    baselines). Runs the ML/Data-Engineering pipeline's trained day-level
+    classifier (repo root: pipeline/, bridged via app/ml_scoring.py and
+    shadow_kedi_adapter.py) against the trailing window of
+    canonical_events, alongside -- not instead of -- this task's own
+    per-event heuristic detectors (orchestrator.py). See
+    app/ml_scoring.py's module docstring for exactly how the two are
+    combined (same anomaly_scores table, one "driver event" per user-day
+    overwritten, every other event untouched).
+
+    Import is INSIDE the task body, not at module top, deliberately: the
+    ML bridge needs pipeline/ (repo root, outside this service's own
+    package) plus joblib/pandas/scikit-learn importable, and neither is
+    guaranteed in every environment this module gets imported in (see
+    ml_scoring.py's own SHADOW_KEDI_PIPELINE_ROOT handling). A bad import
+    here must not be able to crash Celery worker/beat STARTUP -- which
+    would also kill recompute_baselines_from_live_data above, a task with
+    no relationship to the ML pipeline at all. Deferring the import to
+    call time means that failure mode is scoped to just this one task.
+
+    Also requires a trained model file at SHADOW_KEDI_MODEL_PATH (default
+    <repo root>/data/models/ga_optimized_classifier.joblib). That file is
+    NOT part of this repo -- it's produced by pipeline/genetic_optimizer.py
+    from the ML/Data Engineering role's own CERT r4.2 + CASB training run,
+    and has to be supplied (committed under data/models/, or mounted in)
+    before this task can score anything. Until it's present, this logs a
+    clear warning and returns without touching anomaly_scores, rather than
+    raise and crash-loop every beat tick.
+    """
+    logger = logging.getLogger("shadow_kedi.ml_scoring")
+    try:
+        from .ml_scoring import recompute_shadow_kedi_scores
+    except ImportError as exc:
+        logger.warning(
+            "Skipping ML pipeline scoring -- pipeline/ (repo root) or one of "
+            "its dependencies (joblib/pandas/scikit-learn) isn't importable "
+            "in this environment: %s", exc,
+        )
+        return {"skipped": "pipeline_not_importable"}
+
+    try:
+        with SessionLocal() as session:
+            return recompute_shadow_kedi_scores(session)
+    except FileNotFoundError as exc:
+        logger.warning(
+            "Skipping ML pipeline scoring -- no trained model found: %s. "
+            "Expected until the trained .joblib is supplied.", exc,
+        )
+        return {"skipped": "model_not_found"}

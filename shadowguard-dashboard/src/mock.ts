@@ -24,8 +24,33 @@ export const alerts: Alert[] = [
 // GET /users/{id} (see app/api.py) -- the real endpoint was sorting oldest-
 // first; this is the equivalent fix for mock mode, not a hand-copy of it.
 alerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+// Expanded from the original 4 apps / 3 categories -- too sparse to
+// demonstrate the per-category mini-donuts (item 2) or the bubble cluster
+// (item 3) meaningfully, both of which need real category/approval variety
+// to look like anything other than 3-4 dots. Categories deliberately span a
+// realistic range: some genuinely mostly-unapproved (Personal cloud,
+// Unauthorized SaaS -- that's what those categories usually look like in
+// practice), some mostly-sanctioned (Collaboration, Developer tools), one
+// meaningfully mixed (Shadow AI, since ChatGPT being sanctioned while
+// Perplexity/Notion/Claude aren't is a believable real policy split), and
+// one single-app category (VPN) to exercise the mini-donut's single-state
+// path too.
 export const applications: AppInventory[] = [
- {id:'a1',name:'Perplexity AI',category:'Shadow AI',approval:'unapproved',activeUsers:7,review:'needed'}, {id:'a2',name:'Notion AI',category:'Shadow AI',approval:'review',activeUsers:18,review:'in progress'}, {id:'a3',name:'Google Workspace',category:'Collaboration',approval:'sanctioned',activeUsers:148,review:'complete'}, {id:'a4',name:'Personal Google Drive',category:'Personal cloud',approval:'unapproved',activeUsers:3,review:'needed'}
+ {id:'a1',name:'Perplexity AI',category:'Shadow AI',approval:'unapproved',activeUsers:7,review:'needed'},
+ {id:'a2',name:'Notion AI',category:'Shadow AI',approval:'review',activeUsers:18,review:'in progress'},
+ {id:'a5',name:'Claude.ai',category:'Shadow AI',approval:'unapproved',activeUsers:5,review:'needed'},
+ {id:'a6',name:'ChatGPT',category:'Shadow AI',approval:'sanctioned',activeUsers:22,review:'complete'},
+ {id:'a3',name:'Google Workspace',category:'Collaboration',approval:'sanctioned',activeUsers:148,review:'complete'},
+ {id:'a7',name:'Slack',category:'Collaboration',approval:'sanctioned',activeUsers:132,review:'complete'},
+ {id:'a8',name:'Miro',category:'Collaboration',approval:'review',activeUsers:9,review:'in progress'},
+ {id:'a4',name:'Personal Google Drive',category:'Personal cloud',approval:'unapproved',activeUsers:3,review:'needed'},
+ {id:'a9',name:'Dropbox',category:'Personal cloud',approval:'unapproved',activeUsers:9,review:'needed'},
+ {id:'a10',name:'Canva',category:'Unauthorized SaaS',approval:'review',activeUsers:14,review:'in progress'},
+ {id:'a11',name:'Figma (personal)',category:'Unauthorized SaaS',approval:'unapproved',activeUsers:6,review:'needed'},
+ {id:'a12',name:'GitHub',category:'Developer tools',approval:'sanctioned',activeUsers:41,review:'complete'},
+ {id:'a13',name:'npm registry',category:'Developer tools',approval:'sanctioned',activeUsers:55,review:'complete'},
+ {id:'a14',name:'Postman (public workspace)',category:'Developer tools',approval:'unapproved',activeUsers:3,review:'needed'},
+ {id:'a15',name:'NordVPN',category:'VPN',approval:'unapproved',activeUsers:4,review:'needed'},
 ];
 // topRisk was `alerts.slice(0,3)` -- the first 3 array elements, not actually
 // sorted by score despite the label. Happened to line up with the 3 highest
@@ -34,7 +59,17 @@ export const applications: AppInventory[] = [
 // score explicitly (see GET /overview: `sorted(alert_dicts, key=...score,
 // reverse=True)[:3]`) -- mirrored here rather than assumed to still work.
 const topRisk = [...alerts].sort((a, b) => b.score - a.score).slice(0, 3);
-export const overview: Overview = { severityCounts:{low:6,medium:9,high:4,critical:1}, newApps:3, reviewedThisWeek:14, topRisk, weeklyTrend:[7,9,12,10,13,14] };
+// 7 days, oldest-first, matching the shape GET /overview's dailyTrend sends
+// -- illustrative like weeklyTrend above it, not required to sum exactly to
+// severityCounts (that's a live snapshot total; these are a week's history).
+const dailyTrend = {
+  critical: [0, 0, 1, 0, 0, 0, 1],
+  high: [1, 2, 1, 3, 2, 4, 4],
+  medium: [3, 4, 3, 5, 6, 5, 9],
+  low: [4, 3, 5, 4, 6, 5, 6],
+  reviewed: [1, 2, 1, 3, 2, 4, 3],
+};
+export const overview: Overview = { severityCounts:{low:6,medium:9,high:4,critical:1}, newApps:3, reviewedThisWeek:14, topRisk, weeklyTrend:[7,9,12,10,13,14], dailyTrend };
 export const profiles: Record<string, UserProfile> = {
  'u-1': {id:'u-1',name:'Maya Chen',department:'Marketing',baseline:'established',trend:[32,38,41,55,61,78],inventory:['Canva','Perplexity AI','Google Workspace'],alerts:alerts.filter(a=>a.userId==='u-1')},
  'u-2':{id:'u-2',name:'Jordan Rivers',department:'Sales',baseline:'established',trend:[25,22,28,31,64,93],inventory:['Google Workspace','Personal Google Drive'],alerts:alerts.filter(a=>a.userId==='u-2')},

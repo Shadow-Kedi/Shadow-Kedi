@@ -79,10 +79,20 @@ logger = logging.getLogger("shadow_kedi.ml_scoring")
 # your layout differs.
 import os
 
-_PIPELINE_ROOT = os.environ.get(
-    "SHADOW_KEDI_PIPELINE_ROOT",
-    str(Path(__file__).resolve().parents[3]),
-)
+# FIXED 2026-08-17 (found while verifying this against the real Docker
+# deployment, not just a host checkout): os.environ.get(key, default)
+# evaluates its default argument EAGERLY in Python, regardless of whether
+# key is actually set -- so the old `os.environ.get("SHADOW_KEDI_...",
+# str(Path(__file__).resolve().parents[3]))` ran parents[3] unconditionally
+# and raised IndexError inside this image (WORKDIR is flat: /app/app/
+# ml_scoring.py only has 2 parent levels, not 3), even with
+# SHADOW_KEDI_PIPELINE_ROOT explicitly set in the container's environment.
+# The env var was never actually being read in that case -- the crash
+# happened before .get() got a chance to return it. Split into two
+# statements so the parents[3] lookup only runs when it's actually needed.
+_PIPELINE_ROOT = os.environ.get("SHADOW_KEDI_PIPELINE_ROOT")
+if _PIPELINE_ROOT is None:
+    _PIPELINE_ROOT = str(Path(__file__).resolve().parents[3])
 if _PIPELINE_ROOT not in sys.path:
     sys.path.insert(0, _PIPELINE_ROOT)
 

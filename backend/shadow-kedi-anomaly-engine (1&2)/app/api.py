@@ -309,12 +309,53 @@ def get_overview():
     # one undifferentiated number with no way to explain it live.
     file_integrity_count = sum(1 for a in alert_dicts if a["category"] == "file_integrity")
 
+    # Daily trend for the Overview metric cards' sparklines. Bucketed from
+    # data we already have in memory (alert_dicts, one query above) rather
+    # than a fresh query per severity. Oldest-to-newest, 7 days, by the
+    # alert's own occurred_at (createdAt) date -- consistent with how
+    # createdAt is used everywhere else in this file, not ingested_at.
+    #
+    # "reviewed" is the one series that needs its own tiny query: when an
+    # alert was actually marked reviewed (AlertStatusRow.reviewed_at), not
+    # when the underlying alert occurred -- those are different questions,
+    # and alert_dicts only has the latter.
+    #
+    # Deliberately NOT provided for "new apps": that card's count is a
+    # hardcoded 0 (see below), there is no real per-day app-discovery
+    # tracking to bucket, and faking a flat line for a metric with no real
+    # source data isn't "graceful degradation," it's fabrication. Skipped
+    # rather than faked; the frontend simply omits a sparkline on that card.
+    day_keys = [(datetime.now(UTC).date() - timedelta(days=i)).isoformat() for i in range(6, -1, -1)]
+    severity_daily = {sev: dict.fromkeys(day_keys, 0) for sev in ("critical", "high", "medium", "low")}
+    for a in alert_dicts:
+        day = a["createdAt"][:10]
+        bucket = severity_daily[a["severity"]]
+        if day in bucket:
+            bucket[day] += 1
+
+    with SessionLocal() as session:
+        reviewed_timestamps = session.execute(
+            select(AlertStatusRow.reviewed_at).where(AlertStatusRow.reviewed_at.isnot(None))
+        ).scalars().all()
+    reviewed_daily = dict.fromkeys(day_keys, 0)
+    for ts in reviewed_timestamps:
+        day = ts.date().isoformat()
+        if day in reviewed_daily:
+            reviewed_daily[day] += 1
+
     return {
         "severityCounts": counts,
         "newApps": 0,
         "reviewedThisWeek": sum(1 for a in alert_dicts if a["status"] == "resolved"),
         "topRisk": top_risk,
         "fileIntegrityCount": file_integrity_count,
+        "dailyTrend": {
+            "critical": [severity_daily["critical"][d] for d in day_keys],
+            "high": [severity_daily["high"][d] for d in day_keys],
+            "medium": [severity_daily["medium"][d] for d in day_keys],
+            "low": [severity_daily["low"][d] for d in day_keys],
+            "reviewed": [reviewed_daily[d] for d in day_keys],
+        },
     }
 
 

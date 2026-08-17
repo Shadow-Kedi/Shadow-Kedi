@@ -1,6 +1,30 @@
 /* Status text contains a space, so React emits separate `in` and `progress` classes. */
 .badge.in { background: #523d16; color: #ffd987; }
 
+/* Page background: faint instrument-panel grid, applied once at :root so it's
+   consistent across every page by construction (there is no per-page
+   background element to miss). background-image only -- :root's base
+   background-color (#09111d, styles.css) is left untouched so this just
+   layers texture on top of it. Opaque panels/cards paint over it as normal;
+   it only shows through the dark gutters, which is the point. */
+:root {
+  background-image:
+    linear-gradient(rgba(231, 237, 245, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(231, 237, 245, 0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-attachment: fixed;
+}
+
+/* Header/content depth: a soft downward shadow under the header plane, on
+   top of the existing border-bottom, so the header reads as a distinct
+   raised tier over the page rather than a flat line-divided strip -- same
+   two-plane depth as the reference layouts, no color/blur glow involved. */
+header {
+  box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.65);
+  position: relative;
+  z-index: 1;
+}
+
 /* Chart.js panels (src/charts.tsx) */
 .chart-wrap { width: 100%; }
 .chart-wrap canvas { width: 100% !important; height: 100% !important; }
@@ -31,10 +55,43 @@
 .profile-error button:hover:not(:disabled) { background: #1a304a; }
 .profile-error button:disabled { opacity: .6; cursor: not-allowed; }
 
+/* Overview metric-card sparklines -- pushed to the bottom of the card
+   (.metric is a flex column, see styles.css) regardless of how tall the
+   number/label above it are, and stretched to the card's full width rather
+   than a fixed pixel size so it reads as part of the card, not a fixed-size
+   sticker glued on. */
+.sparkline { display: block; width: 100%; height: 28px; margin-top: auto; padding-top: 8px; }
+
 /* FIM-noise annotation under Overview's severity cards -- a footnote, not a
    headline, so it sits close to the cards it's explaining rather than
    reading as its own section. */
 .fim-note { margin: -14px 0 20px; font-size: 12px; cursor: help; border-bottom: 1px dotted #42566e; width: max-content; }
+
+/* Discovery map: per-category mini-donuts + bubble-cluster toggle (item 2/3) */
+.discovery-view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.discovery-view-header h3 { margin: 0; }
+.view-toggle { display: flex; gap: 2px; background: #0e1a2a; border: 1px solid #26364a; border-radius: 7px; padding: 2px; }
+.view-toggle button { border: 0; background: transparent; color: #9db0c5; font-size: 12px; padding: 5px 12px; border-radius: 5px; }
+.view-toggle button.active { background: #1a304a; color: #fff; }
+.mini-donut-legend { display: flex; align-items: center; gap: 6px; color: #9db0c5; font-size: 12px; margin: 10px 0 14px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: 10px; }
+.legend-dot:first-child { margin-left: 0; }
+.legend-dot.low { background: var(--sev-low-mark); }
+.legend-dot.high { background: var(--sev-high-mark); }
+.mini-donut-row { display: flex; flex-wrap: wrap; gap: 20px; }
+.mini-donut { width: 148px; }
+.mini-donut .donut-center-label b { font-size: 16px; }
+.mini-donut .donut-center-label span { font-size: 10px; text-align: center; padding: 0 6px; line-height: 1.3; }
+.bubble-cluster { width: 100%; height: 320px; display: block; }
+.bubble { cursor: help; }
+.bubble:focus-visible circle { outline: 2px solid var(--accent-teal); outline-offset: 2px; }
+.bubble text { fill: #e7edf5; font-family: var(--font-mono); font-size: 10px; pointer-events: none; }
+
+/* Leaderboard row avatar (bonus item) -- .user-cell keeps avatar+name as one
+   centered unit now that .row centers every column (see the alignment fix
+   below); the avatar itself is a plain initials circle, no image assets. */
+.user-cell { display: inline-flex; align-items: center; gap: 9px; }
+.avatar { width: 26px; height: 26px; border-radius: 50%; border: 1px solid; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex: 0 0 auto; }
 
 /* Leaderboard reuses .row/.header, but its last column holds a number
    (alert count) rather than the chevron icon Alerts/Overview use that 18px

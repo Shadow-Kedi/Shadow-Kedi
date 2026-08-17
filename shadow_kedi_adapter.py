@@ -21,6 +21,27 @@ file_size_log, domain_len, has_domain, and has_file remain genuinely
 dormant -- no current event, on any OS, carries byte counts or file
 sizes even in principle yet.
 
+UPDATE 2026-08-17 (pre-demo integration pass): two correctness fixes,
+found while wiring this into app/ml_scoring.py for real:
+  1. is_off_hours / is_weekend were being left at the blanket 0 default
+     below despite being trivially derivable from occurred_at (every row
+     already has it -- no sensor/OS gap, unlike the fields above). Now
+     computed for real: is_off_hours is the fraction of the day's events
+     outside 07:00-19:00 (mean, matching classifier_daily.py's MEAN_COLS
+     aggregation); is_weekend is a single value for the day.
+  2. device_managed / has_admin_rights / security_training_current (CASB-
+     only concepts with no Wazuh equivalent) were defaulting to 0, but
+     feature_engineer.py's own convention for "not applicable to this
+     source" is the sentinel -1, not 0 (see that module: "-1... a real,
+     informative value... not missing data to be imputed away"). A 0
+     told the model "confirmed unmanaged / no admin rights / training not
+     current" instead of "unknown for this source" -- now corrected to -1
+     to match what the model actually saw for these columns in training.
+Neither fix changes WHICH features are populated from live data -- see
+the 2026-08-16 note and app/ml_scoring.py's own accounting for that; this
+only fixes two fields that should never have been dormant in the first
+place.
+
 Usage:
     from shadow_kedi_adapter import canonical_rows_to_daily_features
     daily_features = canonical_rows_to_daily_features(rows)  # one user's rows, one day
@@ -101,6 +122,7 @@ def canonical_rows_to_daily_features(rows: list, feature_cols: list[str]) -> dic
     type_counts = Counter()
     has_exfil_domain = False
     has_removable_media = False
+    n_off_hours = 0
 
     for row in rows:
         col = _event_feature_column(row)
@@ -121,6 +143,15 @@ def canonical_rows_to_daily_features(rows: list, feature_cols: list[str]) -> dic
         if image and any(hint in image for hint in REMOVABLE_MEDIA_HINTS):
             has_removable_media = True
 
+        # is_off_hours: same hour cutoff feature_engineer.py uses per event
+        # (hour<7 or hour>=19), counted here per event so the MEAN_COLS
+        # aggregation below can average it the same way
+        # classifier_daily.build_daily_features() does -- fraction of the
+        # day's events that landed outside normal hours, not just a
+        # single day-level flag.
+        if row.occurred_at.hour < 7 or row.occurred_at.hour >= 19:
+            n_off_hours += 1
+
     daily = {f: 0 for f in feature_cols}
 
     if "daily_event_count" in daily:
@@ -138,6 +169,20 @@ def canonical_rows_to_daily_features(rows: list, feature_cols: list[str]) -> dic
     if "is_removable_media" in daily:
         daily["is_removable_media"] = int(has_removable_media)
 
+    # ADDED 2026-08-17: is_off_hours / is_weekend were previously left at
+    # the blanket 0 default below along with the genuinely-dormant fields --
+    # wrongly, since both are trivially derivable from occurred_at, which
+    # every row already has (no sensor/OS gap unlike is_exfil_domain/
+    # is_removable_media above). MEAN_COLS in classifier_daily.py averages
+    # these per event, so is_off_hours is the fraction of the day's events
+    # that were off-hours; is_weekend is a single value for the day (rows
+    # are already grouped to one calendar day by the caller, so every row
+    # agrees -- taking it from the first row is safe, not an approximation).
+    if "is_off_hours" in daily and n_events > 0:
+        daily["is_off_hours"] = round(n_off_hours / n_events, 4)
+    if "is_weekend" in daily:
+        daily["is_weekend"] = int(rows[0].occurred_at.weekday() >= 5)
+
     # --- fields STILL requiring data no current event carries at all ---
     # Unlike is_exfil_domain/is_removable_media above (now real, just
     # usually 0 given the macOS fleet), these have no live data source
@@ -148,5 +193,18 @@ def canonical_rows_to_daily_features(rows: list, feature_cols: list[str]) -> dic
     for f in ("bytes_sent_log", "file_size_log", "domain_len", "has_domain", "has_file"):
         if f in daily:
             daily[f] = 0
+
+    # ADDED 2026-08-17: feature_engineer.py's own convention for "not
+    # applicable/unknown for this source" is the sentinel -1 (see that
+    # module's docstring: "-1... a real, informative value... not missing
+    # data to be imputed away"), NOT 0 -- but the blanket default above
+    # was silently giving these three CASB-only fields (no Wazuh
+    # equivalent exists) a 0, which the model reads as a confident
+    # "unmanaged device" / "no admin rights" / "training not current"
+    # rather than "genuinely unknown for this source". Overwritten here to
+    # match what the model actually saw for these columns at training time.
+    for f in ("device_managed", "has_admin_rights", "security_training_current"):
+        if f in daily:
+            daily[f] = -1
 
     return daily

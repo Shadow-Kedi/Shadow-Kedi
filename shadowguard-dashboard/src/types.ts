@@ -11,7 +11,15 @@ export interface AppInventory { id: string; name: string; category: string; appr
 // undifferentiated total with no way to explain it. Optional: real backend
 // always sends it (see GET /overview); mock data has none to report, so it's
 // legitimately absent there rather than hardcoded to 0.
-export interface Overview { severityCounts: Record<Severity, number>; newApps: number; reviewedThisWeek: number; topRisk: Alert[]; weeklyTrend?: number[]; fileIntegrityCount?: number; }
+// dailyTrend feeds each metric card's sparkline: 7 days, oldest-first, per
+// severity, plus "reviewed" (by AlertStatusRow.reviewed_at, not alert
+// occurrence date -- a different question). No "newApps" series here on
+// purpose -- see GET /overview's comment for why faking one would be
+// fabrication, not degradation. Optional (not every caller provides it),
+// but mock.ts DOES provide a full 7-day series -- unlike fileIntegrityCount,
+// this is the actual feature being demoed, so mock mode should show it
+// working with real variety, not omit it.
+export interface Overview { severityCounts: Record<Severity, number>; newApps: number; reviewedThisWeek: number; topRisk: Alert[]; weeklyTrend?: number[]; fileIntegrityCount?: number; dailyTrend?: { critical: number[]; high: number[]; medium: number[]; low: number[]; reviewed: number[] }; }
 export interface Page<T> { items: T[]; page: number; pageSize: number; total: number; }
 export type LeaderboardEntry = { userId: string; userName: string; alertCount: number; maxScore: number; topSeverity: string };
 // One "policy trigger" card on the Trends & Policy feed: a category rollup of
