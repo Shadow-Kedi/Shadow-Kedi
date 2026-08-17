@@ -258,3 +258,7 @@ data/models/
 data/synthetic/cert_events.json
 data/processed/normalized_cert_events.json
 data/raw/nslkdd/  # NSL-KDD, no longer used -- guard kept in case it comes back
+
+output.txt
+test_ml.py
+*.db
