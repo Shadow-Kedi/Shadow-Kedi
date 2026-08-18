@@ -81,7 +81,16 @@ header {
 .mini-donut-row { display: flex; flex-wrap: wrap; gap: 20px; }
 .mini-donut { width: 148px; }
 .mini-donut .donut-center-label b { font-size: 16px; }
-.mini-donut .donut-center-label span { font-size: 10px; text-align: center; padding: 0 6px; line-height: 1.3; }
+/* max-width (not just padding) is what actually keeps a label inside the ring --
+   padding alone only adds space around text, it doesn't stop the box growing
+   wider than the ring to fit a long name on one line. 80px is tuned to the
+   148px ring's 68% cutout (~100px inner hole): comfortably fits "Collaboration"
+   (the longest single word that must stay on one line) while forcing any
+   multi-word name past that width to wrap at its natural space instead of
+   spilling past the ring -- covers "Developer Tools"/"Personal Cloud" (wrap to
+   2 lines) and "Unauthorized SaaS" (wraps too), and any future category name
+   the same way, rather than patching around one specific label. */
+.mini-donut .donut-center-label span { font-size: 10px; text-align: center; padding: 0 6px; line-height: 1.3; max-width: 80px; overflow-wrap: break-word; }
 .bubble-cluster { width: 100%; height: 320px; display: block; }
 .bubble { cursor: help; }
 .bubble:focus-visible circle { outline: 2px solid var(--accent-teal); outline-offset: 2px; }
