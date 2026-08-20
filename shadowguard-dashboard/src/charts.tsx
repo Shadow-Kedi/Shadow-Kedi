@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import {
   Chart,
   CategoryScale,
@@ -18,6 +18,39 @@ import {
   type ChartType,
 } from 'chart.js';
 
+// A thin, restrained glow on the line stroke itself -- "a live signal
+// trace," not a bloom effect. Registered globally (Chart.js plugins are
+// chart-instance-agnostic), but it's a no-op unless a chart's own options
+// opt in via `plugins.lineGlow` -- so BarChart/DonutChart, which never set
+// that option, are completely unaffected. Implemented as canvas shadow
+// (shadowColor/shadowBlur) wrapped around the whole dataset-drawing phase,
+// the standard Chart.js technique for this since there's no built-in
+// "glow" option on LineElement.
+interface LineGlowOptions {
+  color?: string;
+  blur?: number;
+}
+// `lineGlow` isn't a real Chart.js plugin option, so its typings don't know
+// about it -- one narrow cast here instead of an `any`/`@ts-expect-error`
+// on every access site.
+function lineGlowOptionsOf(chart: Chart): LineGlowOptions | undefined {
+  return (chart.options.plugins as Record<string, LineGlowOptions> | undefined)?.lineGlow;
+}
+const lineGlowPlugin = {
+  id: 'lineGlow',
+  beforeDatasetsDraw(chart: Chart) {
+    const opts = lineGlowOptionsOf(chart);
+    if (!opts?.color) return;
+    chart.ctx.save();
+    chart.ctx.shadowColor = opts.color;
+    chart.ctx.shadowBlur = opts.blur ?? 6;
+  },
+  afterDatasetsDraw(chart: Chart) {
+    if (!lineGlowOptionsOf(chart)?.color) return;
+    chart.ctx.restore();
+  },
+};
+
 Chart.register(
   CategoryScale,
   LinearScale,
@@ -31,6 +64,7 @@ Chart.register(
   Tooltip,
   Legend,
   Filler,
+  lineGlowPlugin,
 );
 
 // Chart.js draws to canvas, which can't read CSS custom properties directly --
@@ -63,6 +97,26 @@ export function withAlpha(hex: string, alpha: number) {
   const n = parseInt(hex.slice(1), 16);
   const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Chart.js's own animation system draws to canvas, which CSS's
+// prefers-reduced-motion media query can't reach at all -- unlike every
+// other animation in this app (see effects.css), this has to be checked in
+// JS and passed into Chart.js's own `animation` option directly, or a
+// reduced-motion user would still get the full draw-in on every chart.
+// Read once per chart creation (not reactively) -- consistent with how the
+// rest of the app already checks this (see main.tsx's Score component).
+function reducedMotionOK(): boolean {
+  return typeof window === 'undefined' || !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+// A deliberate, on-brand draw-in -- the severity donut sweeps into place
+// (Chart.js's built-in animateRotate/animateScale for arcs) and line/bar
+// values rise from baseline, both over the same restrained duration/easing
+// so the whole page reads as one instrument coming online, not a grab-bag
+// of different chart-library defaults. Off entirely under reduced motion
+// (duration 0) rather than just "faster."
+function chartAnimation(duration = 700) {
+  return reducedMotionOK() ? { duration, easing: 'easeOutQuart' as const } : { duration: 0 };
 }
 
 /** Creates and tears down a Chart.js instance bound to a canvas, redrawing when data/options change. */
@@ -107,7 +161,21 @@ export function LineTrendChart({
           label,
           data: values,
           borderColor: color,
-          backgroundColor: withAlpha(color, 0.16),
+          // A real gradient (top of the fill darker/more saturated, fading
+          // to nothing at the baseline) rather than the flat semi-transparent
+          // fill this used to be -- reads as a "live readout" area rather
+          // than a flat color block. Scriptable option: Chart.js calls this
+          // once chartArea is known: reuse the module-level helper so
+          // LineTrendChart and Sparkline (a hand-rolled SVG, see below) stay
+          // visually identical instead of two different gradient recipes.
+          backgroundColor: (ctx) => {
+            const { chart } = ctx;
+            if (!chart.chartArea) return withAlpha(color, 0.16);
+            const gradient = chart.ctx.createLinearGradient(0, chart.chartArea.top, 0, chart.chartArea.bottom);
+            gradient.addColorStop(0, withAlpha(color, 0.3));
+            gradient.addColorStop(1, withAlpha(color, 0));
+            return gradient;
+          },
           pointBackgroundColor: color,
           pointBorderColor: color,
           pointRadius: 3,
@@ -121,10 +189,13 @@ export function LineTrendChart({
     {
       responsive: true,
       maintainAspectRatio: false,
+      animation: chartAnimation(),
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: { intersect: false, backgroundColor: '#0e1a2a', borderColor: '#26364a', borderWidth: 1, titleColor: '#e7edf5', bodyColor: '#cdd9e6' },
+        // @ts-expect-error -- lineGlow is a custom plugin option, not part of Chart.js's built-in plugin typings
+        lineGlow: { color: withAlpha(color, 0.5), blur: 6 },
       },
       scales: {
         x: { grid: { display: false }, ticks: { color: TICK, font: monoFont } },
@@ -183,6 +254,7 @@ export function BarChart({
       indexAxis: horizontal ? 'y' : 'x',
       responsive: true,
       maintainAspectRatio: false,
+      animation: chartAnimation(),
       plugins: {
         legend: { display: false },
         tooltip: { backgroundColor: '#0e1a2a', borderColor: '#26364a', borderWidth: 1, titleColor: '#e7edf5', bodyColor: '#cdd9e6' },
@@ -238,19 +310,28 @@ export function Sparkline({
   height?: number;
 }) {
   if (!values || values.length === 0) return null;
+  // Unique per instance -- several Sparklines render on Overview at once, and
+  // SVG gradient ids aren't scoped to their own <svg>, so two sparklines
+  // reusing the same id would silently steal each other's gradient.
+  const gradientId = useId();
   const n = values.length;
   const max = Math.max(...values);
   const min = Math.min(...values, 0);
   const range = max - min || 1;
   const pad = 3;
   const toY = (v: number) => height - pad - ((v - min) / range) * (height - pad * 2);
+  // Matches LineTrendChart's stroke glow -- same "live signal trace" feel
+  // on both, since callers mix the two across the app (metric-card
+  // sparklines vs. the full weekly-trend chart) and they should read as one
+  // visual language, not two different treatments of the same idea.
+  const glow = { filter: `drop-shadow(0 0 2px ${withAlpha(color, 0.65)})` };
 
   if (n === 1) {
     const y = toY(values[0]);
     const half = Math.min(10, width / 4);
     return (
       <svg className="sparkline" width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-        <path d={`M ${width / 2 - half} ${y} L ${width / 2 + half} ${y}`} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+        <path d={`M ${width / 2 - half} ${y} L ${width / 2 + half} ${y}`} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" style={glow} />
         <circle cx={width / 2 + half} cy={y} r={2} fill={color} />
       </svg>
     );
@@ -258,10 +339,21 @@ export function Sparkline({
 
   const points = values.map((v, i) => [(i / (n - 1)) * width, toY(v)] as const);
   const d = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ');
+  const [firstX] = points[0];
   const [lastX, lastY] = points[points.length - 1];
+  // Same gradient recipe as LineTrendChart's scriptable backgroundColor:
+  // the line's own color at the top, fading to nothing at the baseline.
+  const areaD = `${d} L ${lastX} ${height} L ${firstX} ${height} Z`;
   return (
     <svg className="sparkline" width={width} height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-      <path d={d} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaD} fill={`url(#${gradientId})`} stroke="none" />
+      <path d={d} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" style={glow} />
       <circle cx={lastX} cy={lastY} r={2} fill={color} />
     </svg>
   );
@@ -313,6 +405,15 @@ export function DonutChart({
           borderColor: '#0e1a2a',
           borderWidth: isSingleState ? 0 : 2,
           hoverOffset: isSingleState ? 0 : 4,
+          // Small radial gaps between segments -- an "instrument gauge" dial
+          // read rather than slices touching edge-to-edge. Chart.js draws
+          // these natively (a real gap in the arc geometry, not a CSS
+          // approximation), so it's precisely consistent across every donut
+          // usage regardless of container size/aspect ratio -- the full-size
+          // Severity Mix donut and the Discovery map's small mini-donuts
+          // alike. No gap in the single-state case (one full ring, nothing
+          // to separate from).
+          spacing: isSingleState ? 0 : 3,
         },
       ],
     },
@@ -320,6 +421,10 @@ export function DonutChart({
       responsive: true,
       maintainAspectRatio: false,
       cutout: '68%',
+      // Slightly longer than the line/bar default -- a full rotate+scale
+      // sweep into place reads better a beat slower than a bar simply
+      // growing from its baseline.
+      animation: { ...chartAnimation(850), animateRotate: true, animateScale: true },
       plugins: {
         legend: {
           display: showLegend && !isSingleState && !centerLabel,

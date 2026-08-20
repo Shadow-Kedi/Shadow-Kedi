@@ -3,6 +3,61 @@
    Loaded after styles.css/overrides.css so it only adds transition/animation
    properties, never overrides color or layout. */
 
+/* ---------- Background instrument texture ---------- */
+/* A fixed layer behind all content, not part of the scrolling page flow --
+   position:fixed so it never repaints on scroll, and inset is overscanned
+   past the viewport edges so the drift animation below can translate it by
+   exactly one grid period without ever revealing a hard edge. Extremely low
+   opacity (an emphatic 100% is ~0.9 by comparison) so it reads as a faint
+   instrument-panel backdrop, not a decorative pattern -- it should disappear
+   the moment you're not looking for it. Sits at z-index 0; `main` below is
+   explicitly lifted to z-index 1 so real content always stacks above it
+   regardless of DOM order, without touching any layout/spacing. Opaque
+   cards/panels naturally occlude it where they sit, so it only shows through
+   page gutters and gaps -- exactly the "seen through the gaps" panel look. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -40px;
+  z-index: 0;
+  pointer-events: none;
+  /* Bumped from 0.035 -- still well under "emphatic" (~0.9), but the lines
+     were reading as almost imperceptible even when deliberately looking for
+     them; this is the "a bit more visually present" adjustment. */
+  background-image:
+    linear-gradient(rgba(112, 225, 191, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(112, 225, 191, 0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridDrift 140s linear infinite;
+}
+/* A second, non-drifting layer for depth: a very faint radial vignette,
+   darker toward the edges. Deliberately a SEPARATE element from the grid
+   above rather than another background-image on the same one -- the grid
+   drifts via `transform` (see gridDrift below), and a vignette drifting
+   along with it would look wrong (a vignette should stay centered on the
+   viewport, not migrate). No animation on this layer at all -- it's meant
+   to read as fixed depth, not motion. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 40%, rgba(20, 36, 58, 0) 0%, rgba(4, 8, 14, 0.4) 100%);
+}
+main {
+  position: relative;
+  z-index: 1;
+}
+/* transform-only (not background-position) so this is compositor-driven --
+   cheap regardless of how long it runs. Translating by exactly one grid
+   period (40px) makes the loop seamless: frame 0 and the frame right before
+   `to` are pixel-identical to frame 0, so there's no visible reset/jump. */
+@keyframes gridDrift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-40px, -40px); }
+}
+
 /* ---------- Custom cursor ---------- */
 /* Only on devices with a precise pointer; touch devices keep their native cursor. */
 @media (hover: hover) and (pointer: fine) {
@@ -138,6 +193,21 @@ button,
   animation: pulseCritical 1.8s ease-out infinite;
 }
 
+/* ---------- Critical glow: reserved for meaning, not decoration ---------- */
+/* A steady soft halo on the critical severity badge/dot specifically --
+   deliberately NOT applied to high/medium/low, and deliberately NOT applied
+   to every card/chart/button. This is additive to the pulse-critical ring
+   above (which animates the surrounding row), scoped tightly to the small
+   mark itself so criticality reads as unmistakable even outside the row's
+   pulse cycle. Two shadow layers: a soft wide blur for the ambient glow, a
+   tight near-0-blur ring for definition so the mark doesn't just look
+   blurry at small sizes. */
+.dot.critical,
+.point.critical,
+.badge.critical {
+  box-shadow: 0 0 7px 1px rgba(239, 57, 224, 0.45), 0 0 1px rgba(239, 57, 224, 0.7);
+}
+
 /* ---------- Heartbeat indicator: the signature element ---------- */
 .heartbeat {
   display: flex;
@@ -173,15 +243,23 @@ button,
   color: #9db0c5;
   letter-spacing: 0.02em;
 }
+/* The expanding ring (unchanged) plus a brief true glow (blurred, no
+   spread) layered in and back out across the same cycle -- peaks around
+   the same moment the ring is most visible, gone by the time it settles
+   back to healthy-idle. This is the one glow allowed to be genuinely
+   bright, since "Live" is the rarest, most meaningful state this dot has. */
 @keyframes heartbeatPulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(112, 225, 191, 0.6);
+    box-shadow: 0 0 0 0 rgba(112, 225, 191, 0.6), 0 0 0 0 rgba(112, 225, 191, 0);
+  }
+  30% {
+    box-shadow: 0 0 0 4px rgba(112, 225, 191, 0.18), 0 0 9px 2px rgba(112, 225, 191, 0.85);
   }
   70% {
-    box-shadow: 0 0 0 8px rgba(112, 225, 191, 0);
+    box-shadow: 0 0 0 8px rgba(112, 225, 191, 0), 0 0 4px 1px rgba(112, 225, 191, 0.3);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(112, 225, 191, 0);
+    box-shadow: 0 0 0 0 rgba(112, 225, 191, 0), 0 0 0 0 rgba(112, 225, 191, 0);
   }
 }
 
@@ -197,9 +275,11 @@ button,
 @keyframes scoreFlash {
   0% {
     background: rgba(112, 225, 191, 0.35);
+    box-shadow: 0 0 8px 1px rgba(112, 225, 191, 0.55);
   }
   100% {
     background: transparent;
+    box-shadow: 0 0 0 0 rgba(112, 225, 191, 0);
   }
 }
 
@@ -237,7 +317,8 @@ button,
   .pulse-critical,
   .page-fade-in,
   .heartbeat-dot.live,
-  .score-flash {
+  .score-flash,
+  body::before {
     animation: none;
   }
 }
